@@ -2,8 +2,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
-from app.schemas.state import StateResponse
-from app.schemas.city import CityResponse
+from schemas.state import StateResponse
+from schemas.city import CityResponse
 
 
 class VendorCreate(BaseModel):

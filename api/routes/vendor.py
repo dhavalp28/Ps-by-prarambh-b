@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.api.deps import get_db
-from app.schemas.vendor import VendorCreate, VendorUpdate, VendorResponse
-from app.services import vendor_service
+from api.deps import get_db
+from schemas.vendor import VendorCreate, VendorUpdate, VendorResponse
+from services import vendor_service
 
 router = APIRouter()
 

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.api.deps import get_db
-from app.schemas.city import CityCreate, CityUpdate, CityResponse
-from app.services import city_service
+from api.deps import get_db
+from schemas.city import CityCreate, CityUpdate, CityResponse
+from services import city_service
 
 router = APIRouter()
 

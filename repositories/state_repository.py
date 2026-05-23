@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models.state import State
+from db.models.state import State
 
 
 def get_all_states(db: Session):

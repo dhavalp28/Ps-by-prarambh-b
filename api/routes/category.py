@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.api.deps import get_db
-from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
-from app.services import category_service
+from api.deps import get_db
+from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from services import category_service
 
 router = APIRouter()
 

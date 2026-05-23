@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.repositories import vendor_repository
-from app.repositories.state_repository import get_state_by_id
-from app.repositories.city_repository import get_city_by_id
-from app.schemas.vendor import VendorCreate, VendorUpdate
-from app.core.security import hash_password
+from repositories import vendor_repository
+from repositories.state_repository import get_state_by_id
+from repositories.city_repository import get_city_by_id
+from schemas.vendor import VendorCreate, VendorUpdate
+from core.security import hash_password
 
 VALID_GENDERS = {"male", "female", "other"}
 

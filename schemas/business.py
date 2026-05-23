@@ -2,10 +2,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
-from app.schemas.state import StateResponse
-from app.schemas.city import CityResponse
-from app.schemas.category import CategoryResponse
-from app.schemas.sub_category import SubCategoryResponse
+from schemas.state import StateResponse
+from schemas.city import CityResponse
+from schemas.category import CategoryResponse
+from schemas.sub_category import SubCategoryResponse
 
 
 # ── Nested owner summary ───────────────────────────────────────────────────────

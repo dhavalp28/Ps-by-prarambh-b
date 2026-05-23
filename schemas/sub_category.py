@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from app.schemas.category import CategoryResponse
+from schemas.category import CategoryResponse
 
 
 class SubCategoryCreate(BaseModel):

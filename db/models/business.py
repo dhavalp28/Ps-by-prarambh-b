@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 
-from app.db.base import Base
+from db.base import Base
 
 
 class Business(Base):

@@ -1,8 +1,8 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-from app.schemas.state import StateResponse
-from app.schemas.city import CityResponse
+from schemas.state import StateResponse
+from schemas.city import CityResponse
 
 
 class UserResponse(BaseModel):

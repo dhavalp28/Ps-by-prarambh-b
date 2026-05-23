@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models.vendor import Vendor
+from db.models.vendor import Vendor
 
 
 def get_all_vendors(db: Session):

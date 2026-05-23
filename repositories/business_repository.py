@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models.business import Business
+from db.models.business import Business
 
 
 def get_all_businesses(db: Session):

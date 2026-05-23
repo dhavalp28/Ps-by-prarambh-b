@@ -7,7 +7,13 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_SIZE_MB = 5
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
-BASE_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
+def _compute_base_upload_dir() -> str:
+    if os.environ.get("VERCEL"):
+        return "/tmp/ps_by_prarambh/uploads"
+    return os.path.join(os.path.dirname(__file__), "..", "uploads")
+
+
+BASE_UPLOAD_DIR = _compute_base_upload_dir()
 
 
 async def save_upload(file: UploadFile, folder: str) -> str:

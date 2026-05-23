@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.repositories import business_repository
-from app.repositories.state_repository import get_state_by_id
-from app.repositories.city_repository import get_city_by_id
-from app.repositories.category_repository import get_category_by_id
-from app.repositories.sub_category_repository import get_sub_category_by_id
-from app.schemas.business import BusinessCreate, BusinessUpdate
+from repositories import business_repository
+from repositories.state_repository import get_state_by_id
+from repositories.city_repository import get_city_by_id
+from repositories.category_repository import get_category_by_id
+from repositories.sub_category_repository import get_sub_category_by_id
+from schemas.business import BusinessCreate, BusinessUpdate
 
 
 def _validate_location(db: Session, state_id: int, city_id: int):

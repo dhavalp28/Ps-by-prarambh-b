@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.repositories import user_repository
-from app.repositories.state_repository import get_state_by_id
-from app.repositories.city_repository import get_city_by_id
-from app.schemas.user import UserUpdate
+from repositories import user_repository
+from repositories.state_repository import get_state_by_id
+from repositories.city_repository import get_city_by_id
+from schemas.user import UserUpdate
 
 
 def get_all_users(db: Session):

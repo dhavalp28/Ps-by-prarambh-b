@@ -1,15 +1,15 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.repositories.user_repository import (
+from repositories.user_repository import (
     get_user_by_phone,
     get_user_by_email,
     create_user
 )
-from app.repositories.state_repository import get_state_by_id
-from app.repositories.city_repository import get_city_by_id
+from repositories.state_repository import get_state_by_id
+from repositories.city_repository import get_city_by_id
 
-from app.core.security import (
+from core.security import (
     hash_password,
     verify_password,
     create_access_token

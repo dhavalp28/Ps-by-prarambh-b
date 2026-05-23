@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models.city import City
+from db.models.city import City
 
 
 def get_all_cities(db: Session):

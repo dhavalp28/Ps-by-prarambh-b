@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.repositories import state_repository
-from app.schemas.state import StateCreate, StateUpdate
+from repositories import state_repository
+from schemas.state import StateCreate, StateUpdate
 
 
 def get_all_states(db: Session):

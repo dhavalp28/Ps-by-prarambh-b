@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.repositories import sub_category_repository, category_repository
-from app.schemas.sub_category import SubCategoryCreate, SubCategoryUpdate
+from repositories import sub_category_repository, category_repository
+from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate
 
 
 def get_all_sub_categories(db: Session):

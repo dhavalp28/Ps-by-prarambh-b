@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models.banner import Banner
+from db.models.banner import Banner
 
 
 def get_all_banners(db: Session):

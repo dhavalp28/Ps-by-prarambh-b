@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.db.models.user import User
+from db.models.user import User
 
 
 def get_user_by_phone(db: Session, phone: str):

@@ -2,8 +2,8 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, status
 
-from app.repositories import banner_repository
-from app.utils.upload import save_upload, delete_upload
+from repositories import banner_repository
+from utils.upload import save_upload, delete_upload
 
 
 def get_all_banners(db: Session):

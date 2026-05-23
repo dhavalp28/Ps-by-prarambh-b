@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from app.schemas.state import StateResponse
+from schemas.state import StateResponse
 
 
 class CityCreate(BaseModel):

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.repositories import city_repository, state_repository
-from app.schemas.city import CityCreate, CityUpdate
+from repositories import city_repository, state_repository
+from schemas.city import CityCreate, CityUpdate
 
 
 def get_all_cities(db: Session):
