@@ -1,13 +1,27 @@
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.router import api_router
+from routers.router import api_router
 from db.session import engine
 from db.base import Base
 
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # On Vercel: skip DDL by default (direct db host often fails serverless).
+    # Use pooled DATABASE_URL + Alembic/migrate. Set ENABLE_VERCEL_SCHEMA_CREATE=1 to force.
+    skip_ddl_on_vercel = bool(os.getenv("VERCEL")) and os.getenv(
+        "ENABLE_VERCEL_SCHEMA_CREATE", ""
+    ).lower() not in ("1", "true", "yes")
+
+    if not skip_ddl_on_vercel:
+        Base.metadata.create_all(bind=engine)
+    yield
+
 
 # Writable upload root (bundle is read-only on Vercel except /tmp)
 _BASE_DIR = (
@@ -20,7 +34,7 @@ _BASE_DIR = (
 UPLOAD_DIR = os.path.join(_BASE_DIR, "uploads", "banners")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI(title="MyAreaPlus API")
+app = FastAPI(title="MyAreaPlus API", lifespan=lifespan)
 
 # CORS — allow admin panel origin
 app.add_middleware(

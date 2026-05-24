@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from api.deps import get_db
+from routers.deps import get_db
 from schemas.banner import BannerResponse
 from services import banner_service
 

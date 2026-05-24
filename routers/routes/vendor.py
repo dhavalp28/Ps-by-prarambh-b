@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from api.deps import get_db
+from routers.deps import get_db
 from schemas.vendor import VendorCreate, VendorUpdate, VendorResponse
 from services import vendor_service
 

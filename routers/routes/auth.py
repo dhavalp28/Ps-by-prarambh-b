@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from api.deps import get_db
+from routers.deps import get_db
 from schemas.auth import RegisterSchema, LoginSchema
 from services.auth_service import (
     register_user,
