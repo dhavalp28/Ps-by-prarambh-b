@@ -34,7 +34,11 @@ _BASE_DIR = (
 UPLOAD_DIR = os.path.join(_BASE_DIR, "uploads", "banners")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI(title="MyAreaPlus API", lifespan=lifespan)
+app = FastAPI(
+    title="PS By Prarambh API",
+    description="REST API backend for PS By Prarambh.",
+    lifespan=lifespan,
+)
 
 # CORS — allow admin panel origin
 app.add_middleware(
