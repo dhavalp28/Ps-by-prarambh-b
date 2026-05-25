@@ -5,21 +5,35 @@ from typing import List, Optional
 from routers.deps import get_db
 from schemas.banner import BannerResponse
 from services import banner_service
+from utils.response import (
+    success_list, success_create, success_update, success_delete,
+    error_not_found, error_server
+)
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[BannerResponse])
+@router.get("/")
 def list_banners(db: Session = Depends(get_db)):
-    return banner_service.get_all_banners(db)
+    try:
+        banners = banner_service.get_all_banners(db)
+        return success_list(title="Banners List", data=banners)
+    except Exception as e:
+        return error_server(title="Banners List", error=str(e))
 
 
-@router.get("/{banner_id}", response_model=BannerResponse)
+@router.get("/{banner_id}")
 def get_banner(banner_id: int, db: Session = Depends(get_db)):
-    return banner_service.get_banner(db, banner_id)
+    try:
+        banner = banner_service.get_banner(db, banner_id)
+        if not banner:
+            return error_not_found(title="Get Banner", resource="Banner")
+        return success_list(title="Banner Details", data=banner)
+    except Exception as e:
+        return error_server(title="Get Banner", error=str(e))
 
 
-@router.post("/", response_model=BannerResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_banner(
     title: str = Form(...),
     subtitle: Optional[str] = Form(None),
@@ -29,18 +43,22 @@ async def create_banner(
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    return await banner_service.create_banner(
-        db=db,
-        title=title,
-        subtitle=subtitle,
-        redirect_url=redirect_url,
-        description=description,
-        sort_order=sort_order,
-        image=image,
-    )
+    try:
+        banner = await banner_service.create_banner(
+            db=db,
+            title=title,
+            subtitle=subtitle,
+            redirect_url=redirect_url,
+            description=description,
+            sort_order=sort_order,
+            image=image,
+        )
+        return success_create(title="Banner Created", data=banner)
+    except Exception as e:
+        return error_server(title="Create Banner", error=str(e))
 
 
-@router.put("/{banner_id}", response_model=BannerResponse)
+@router.put("/{banner_id}")
 async def update_banner(
     banner_id: int,
     title: Optional[str] = Form(None),
@@ -52,19 +70,31 @@ async def update_banner(
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
-    return await banner_service.update_banner(
-        db=db,
-        banner_id=banner_id,
-        title=title,
-        subtitle=subtitle,
-        redirect_url=redirect_url,
-        description=description,
-        sort_order=sort_order,
-        is_active=is_active,
-        image=image,
-    )
+    try:
+        banner = await banner_service.update_banner(
+            db=db,
+            banner_id=banner_id,
+            title=title,
+            subtitle=subtitle,
+            redirect_url=redirect_url,
+            description=description,
+            sort_order=sort_order,
+            is_active=is_active,
+            image=image,
+        )
+        if not banner:
+            return error_not_found(title="Update Banner", resource="Banner")
+        return success_update(title="Banner Updated", data=banner)
+    except Exception as e:
+        return error_server(title="Update Banner", error=str(e))
 
 
-@router.delete("/{banner_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{banner_id}")
 def delete_banner(banner_id: int, db: Session = Depends(get_db)):
-    banner_service.delete_banner(db, banner_id)
+    try:
+        banner = banner_service.delete_banner(db, banner_id)
+        if not banner:
+            return error_not_found(title="Delete Banner", resource="Banner")
+        return success_delete(title="Banner Deleted")
+    except Exception as e:
+        return error_server(title="Delete Banner", error=str(e))
