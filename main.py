@@ -9,6 +9,8 @@ from routers.router import api_router
 from db.session import engine
 from db.base import Base
 
+# PS By Prarambh API - Backend Service
+# Version: 1.0.0
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
