@@ -19,7 +19,10 @@ async def lifespan(app: FastAPI):
     ).lower() not in ("1", "true", "yes")
 
     if not skip_ddl_on_vercel:
-        Base.metadata.create_all(bind=engine)
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as e:
+            print(f"Warning: Could not create tables: {e}")
     yield
 
 
@@ -43,7 +46,7 @@ app = FastAPI(
 # CORS — allow admin panel origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,3 +65,13 @@ app.include_router(api_router)
 @app.get("/")
 def root():
     return {"message": "API Running Successfully"}
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for debugging"""
+    return {
+        "status": "healthy",
+        "environment": os.getenv("VERCEL_ENV", "development"),
+        "database_configured": bool(os.getenv("DATABASE_URL")),
+    }
