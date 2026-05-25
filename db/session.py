@@ -13,20 +13,24 @@ is_production = os.getenv("VERCEL_ENV") == "production"
 pool_class = NullPool if is_production else QueuePool
 
 try:
-    engine = create_engine(
-        settings.DATABASE_URL,
-        poolclass=pool_class,
-        connect_args={
+    # Build engine kwargs based on pool class
+    engine_kwargs = {
+        "poolclass": pool_class,
+        "connect_args": {
             "connect_timeout": 10,
             "keepalives": 1,
             "keepalives_idle": 30,
             "sslmode": "require",
         },
-        # For production, reduce pool size
-        pool_size=5 if not is_production else 1,
-        max_overflow=10 if not is_production else 0,
-        echo=False,
-    )
+        "echo": False,
+    }
+    
+    # Only add pool_size and max_overflow for QueuePool (not NullPool)
+    if not is_production:
+        engine_kwargs["pool_size"] = 5
+        engine_kwargs["max_overflow"] = 10
+    
+    engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 except Exception as e:
     print(f"Error creating database engine: {e}")
     raise
