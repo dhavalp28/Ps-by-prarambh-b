@@ -1,157 +1,140 @@
 """
-Migration script — run once to sync the users table with the new schema.
+Bootstrap and migrate Postgres schema.
+
+Use this after switching DATABASE_URL to Neon (or any Postgres).
 
 What it does:
-  1. Creates states / cities / categories / sub_categories / banners tables if missing
-  2. Adds state_id and city_id FK columns to users (if not already there)
-  3. Drops the old state and city string columns from users (if still there)
+  1. Creates ALL tables from SQLAlchemy models under db/models/
+     (states, cities, categories, sub_categories, banners, users, vendors,
+     businesses, … — exact match to ORM definitions).
+  2. Applies legacy tweaks on `users` if you upgraded from an old schema:
+     adds state_id / city_id if missing, drops old VARCHAR state/city columns
+     when present.
 
-Run from the app/ directory:
+Prerequisites:
+  - python-dotenv, sqlalchemy, psycopg2-binary (see requirements.txt)
+  - DATABASE_URL set in `.env`, e.g. Neon:
+      postgresql://USER:PASSWORD@EP-XXXX.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+Run:
     python migrate.py
+
+Neon quirk: pooled DSN rejects ``options=-c search_path=...`` at connect; use listener + ORM schema.
 """
 
+from __future__ import annotations
+
 import os
-import psycopg2
+import sys
+
 from dotenv import load_dotenv
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
+from sqlalchemy import create_engine, event, inspect, text
 
 
-def run():
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = False
-    cur = conn.cursor()
+def ensure_database_url() -> str:
+    load_dotenv()
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        print("DATABASE_URL is not set. Put it in .env or export it.", file=sys.stderr)
+        sys.exit(1)
+    return url
 
-    try:
-        print("=== Starting migration ===\n")
 
-        # ── 1. Create states table ─────────────────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS states (
-                id         SERIAL PRIMARY KEY,
-                name       VARCHAR NOT NULL UNIQUE,
-                is_active  BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-        """)
-        print("✓ states table ready")
+def create_all_tables(engine) -> None:
+    """Register every model against Base.metadata and CREATE TABLE IF missing."""
+    from db.base import Base
 
-        # ── 2. Create cities table ─────────────────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS cities (
-                id         SERIAL PRIMARY KEY,
-                name       VARCHAR NOT NULL,
-                state_id   INTEGER NOT NULL REFERENCES states(id) ON DELETE CASCADE,
-                is_active  BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-        """)
-        print("✓ cities table ready")
+    import db.models.init  # noqa: F401 — loads all mapped classes onto Base
 
-        # ── 3. Create categories table ─────────────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS categories (
-                id          SERIAL PRIMARY KEY,
-                name        VARCHAR NOT NULL UNIQUE,
-                description VARCHAR,
-                is_active   BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-        """)
-        print("✓ categories table ready")
+    print("Creating any missing tables from SQLAlchemy models…")
+    Base.metadata.create_all(bind=engine)
+    print("✓ Model-driven schema is applied (tables created if they did not exist).")
 
-        # ── 4. Create sub_categories table ────────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS sub_categories (
-                id          SERIAL PRIMARY KEY,
-                name        VARCHAR NOT NULL,
-                description VARCHAR,
-                category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-                is_active   BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-        """)
-        print("✓ sub_categories table ready")
 
-        # ── 5. Create banners table ────────────────────────────────────────
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS banners (
-                id           SERIAL PRIMARY KEY,
-                title        VARCHAR NOT NULL UNIQUE,
-                subtitle     VARCHAR,
-                image_url    VARCHAR NOT NULL,
-                redirect_url VARCHAR,
-                description  TEXT,
-                sort_order   INTEGER NOT NULL DEFAULT 0,
-                is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
-        """)
-        print("✓ banners table ready")
+def migrate_legacy_users(engine) -> None:
+    """Handle old installs that stored state/city as strings on users."""
+    insp = inspect(engine)
+    schema = "public"
 
-        # ── 6. Check which columns exist on users ──────────────────────────
-        cur.execute("""
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'users';
-        """)
-        existing_cols = {row[0] for row in cur.fetchall()}
-        print(f"\nExisting users columns: {sorted(existing_cols)}")
+    if not insp.has_table("users", schema=schema):
+        print("– users table missing (unexpected after create_all); skipping legacy tweaks")
+        return
 
-        # ── 7. Add state_id column if missing ──────────────────────────────
-        if "state_id" not in existing_cols:
-            # Add as nullable first (existing rows can't satisfy NOT NULL yet)
-            cur.execute("""
-                ALTER TABLE users
-                ADD COLUMN state_id INTEGER REFERENCES states(id);
-            """)
-            print("✓ Added users.state_id")
-        else:
-            print("– users.state_id already exists, skipping")
+    cols = {c["name"] for c in insp.get_columns("users", schema=schema)}
+    print(f"\nusers columns (for legacy checks): {sorted(cols)}")
 
-        # ── 8. Add city_id column if missing ───────────────────────────────
-        if "city_id" not in existing_cols:
-            cur.execute("""
-                ALTER TABLE users
-                ADD COLUMN city_id INTEGER REFERENCES cities(id);
-            """)
-            print("✓ Added users.city_id")
-        else:
-            print("– users.city_id already exists, skipping")
+    stmts = []
+    # Add FK columns only if absent (normally already created by SQLAlchemy)
+    if "state_id" not in cols:
+        stmts.append(
+            "ALTER TABLE public.users ADD COLUMN state_id INTEGER REFERENCES public.states(id);"
+        )
+    if "city_id" not in cols:
+        stmts.append(
+            "ALTER TABLE public.users ADD COLUMN city_id INTEGER REFERENCES public.cities(id);"
+        )
 
-        # ── 9. Drop old string columns if still present ────────────────────
-        if "state" in existing_cols:
-            cur.execute("ALTER TABLE users DROP COLUMN state;")
-            print("✓ Dropped users.state (old string column)")
-        else:
-            print("– users.state already removed, skipping")
+    drops = []
+    if "state" in cols:
+        drops.append("ALTER TABLE public.users DROP COLUMN IF EXISTS state;")
+    if "city" in cols:
+        drops.append("ALTER TABLE public.users DROP COLUMN IF EXISTS city;")
 
-        if "city" in existing_cols:
-            cur.execute("ALTER TABLE users DROP COLUMN city;")
-            print("✓ Dropped users.city (old string column)")
-        else:
-            print("– users.city already removed, skipping")
+    if not stmts and not drops:
+        print("– Legacy user column migration already satisfied; nothing to ALTER.")
+        return
 
-        conn.commit()
-        print("\n=== Migration completed successfully ===")
-        print("\nNOTE: state_id and city_id are nullable for now.")
-        print("Existing users have NULL values — assign them via the admin panel.")
+    with engine.begin() as conn:
+        for sql in stmts:
+            conn.execute(text(sql))
+        if stmts:
+            print(
+                "✓ Added missing FK columns on users (only if your DB predated the ORM)."
+            )
 
-    except Exception as e:
-        conn.rollback()
-        print(f"\n✗ Migration failed: {e}")
-        raise
-    finally:
+        for sql in drops:
+            conn.execute(text(sql))
+        if drops:
+            print(
+                "✓ Dropped legacy VARCHAR state/city on users (if they still existed)."
+            )
+
+
+def main() -> None:
+    DATABASE_URL = ensure_database_url()
+
+    print("Connecting with SQLAlchemy (pool_pre_ping enabled)…\n")
+
+    # Neon pooled hosts reject startup GUCs in libpq `options=` (see Neon docs).
+    # We set search_path after connect via the listener below; DDL uses MetaData(schema="public").
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+    )
+
+    @event.listens_for(engine, "connect")
+    def _set_search_path(dbapi_conn, connection_record):  # noqa: ARG001
+        cur = dbapi_conn.cursor()
+        cur.execute("SET search_path TO public")
         cur.close()
-        conn.close()
+
+    # Ensure schema exists (some setups have no writable path until this runs)
+    with engine.begin() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS public"))
+
+    # Verify connection early
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+
+    create_all_tables(engine)
+
+    migrate_legacy_users(engine)
+
+    print("\n=== Done ===")
+    print(
+        "Ensure Vercel / local .env use the same DATABASE_URL if you migrated to Neon.\n"
+    )
 
 
 if __name__ == "__main__":
-    run()
+    main()

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool, QueuePool
 import os
@@ -31,6 +31,12 @@ try:
         engine_kwargs["max_overflow"] = 10
     
     engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
+
+    @event.listens_for(engine, "connect")
+    def _set_search_path(dbapi_conn, connection_record):  # noqa: ARG001
+        cur = dbapi_conn.cursor()
+        cur.execute("SET search_path TO public")
+        cur.close()
 except Exception as e:
     print(f"Error creating database engine: {e}")
     raise
