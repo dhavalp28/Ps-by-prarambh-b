@@ -11,6 +11,7 @@ class Category(Base):
 
     name = Column(String, unique=True, nullable=False)
     description = Column(String, nullable=True)
+    icon = Column(String, nullable=True)
 
     is_active = Column(Boolean, default=True)
 

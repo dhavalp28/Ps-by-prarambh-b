@@ -12,6 +12,7 @@ class SubCategory(Base):
 
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    icon = Column(String, nullable=True)
 
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
 

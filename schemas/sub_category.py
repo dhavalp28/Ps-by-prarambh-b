@@ -8,12 +8,14 @@ from schemas.category import CategoryResponse
 class SubCategoryCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    icon: Optional[str] = None
     category_id: int
 
 
 class SubCategoryUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    icon: Optional[str] = None
     category_id: Optional[int] = None
     is_active: Optional[bool] = None
 
@@ -22,6 +24,7 @@ class SubCategoryResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
+    icon: Optional[str]
     category_id: int
     category: CategoryResponse
     is_active: bool
