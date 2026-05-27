@@ -109,3 +109,4 @@ def delete_sub_category(db: Session, sub_category_id: int):
         )
 
     sub_category_repository.delete_sub_category(db, sub_category)
+    return sub_category

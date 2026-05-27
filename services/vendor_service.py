@@ -105,6 +105,7 @@ def delete_vendor(db: Session, vendor_id: int):
     if not vendor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vendor not found")
     vendor_repository.delete_vendor(db, vendor)
+    return vendor
 
 
 def toggle_active(db: Session, vendor_id: int):

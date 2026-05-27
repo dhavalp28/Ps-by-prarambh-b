@@ -84,6 +84,7 @@ def delete_business(db: Session, business_id: int):
     if not business:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")
     business_repository.delete_business(db, business)
+    return business
 
 
 def toggle_active(db: Session, business_id: int):

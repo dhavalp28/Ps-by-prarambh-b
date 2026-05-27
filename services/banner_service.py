@@ -121,3 +121,4 @@ def delete_banner(db: Session, banner_id: int):
     delete_upload(banner.image_url)
 
     banner_repository.delete_banner(db, banner)
+    return banner

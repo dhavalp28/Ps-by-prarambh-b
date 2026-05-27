@@ -66,3 +66,4 @@ def delete_state(db: Session, state_id: int):
         )
 
     state_repository.delete_state(db, state)
+    return state

@@ -66,3 +66,4 @@ def delete_category(db: Session, category_id: int):
         )
 
     category_repository.delete_category(db, category)
+    return category

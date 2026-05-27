@@ -100,3 +100,4 @@ def delete_city(db: Session, city_id: int):
         )
 
     city_repository.delete_city(db, city)
+    return city

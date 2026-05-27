@@ -91,3 +91,4 @@ def delete_user(db: Session, user_id: int):
         )
 
     user_repository.delete_user(db, user)
+    return user
