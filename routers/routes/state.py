@@ -61,6 +61,6 @@ def delete_state(state_id: int, db: Session = Depends(get_db)):
         state = state_service.delete_state(db, state_id)
         if not state:
             return error_not_found(title="Delete State", resource="State")
-        return success_delete(title="State Deleted")
+        return success_delete(title="State Deleted", resource_id=state.id)
     except Exception as e:
         return error_server(title="Delete State", error=str(e))

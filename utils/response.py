@@ -96,11 +96,11 @@ def success_update(title: str, data: Any, message: str = None) -> Dict[str, Any]
     )
 
 
-def success_delete(title: str, message: str = None) -> Dict[str, Any]:
+def success_delete(title: str, resource_id: int = None, message: str = None) -> Dict[str, Any]:
     """Success response for delete operations"""
     return SuccessResponse.create(
         title=title,
-        data=None,
+        data={"id": resource_id} if resource_id else None,
         message=message or "Deleted successfully"
     )
 

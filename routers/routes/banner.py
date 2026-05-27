@@ -95,6 +95,6 @@ def delete_banner(banner_id: int, db: Session = Depends(get_db)):
         banner = banner_service.delete_banner(db, banner_id)
         if not banner:
             return error_not_found(title="Delete Banner", resource="Banner")
-        return success_delete(title="Banner Deleted")
+        return success_delete(title="Banner Deleted", resource_id=banner.id)
     except Exception as e:
         return error_server(title="Delete Banner", error=str(e))

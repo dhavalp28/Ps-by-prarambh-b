@@ -61,7 +61,7 @@ def delete_vendor(vendor_id: int, db: Session = Depends(get_db)):
         vendor = vendor_service.delete_vendor(db, vendor_id)
         if not vendor:
             return error_not_found(title="Delete Vendor", resource="Vendor")
-        return success_delete(title="Vendor Deleted")
+        return success_delete(title="Vendor Deleted", resource_id=vendor.id)
     except Exception as e:
         return error_server(title="Delete Vendor", error=str(e))
 

@@ -50,6 +50,6 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         user = user_service.delete_user(db, user_id)
         if not user:
             return error_not_found(title="Delete User", resource="User")
-        return success_delete(title="User Deleted")
+        return success_delete(title="User Deleted", resource_id=user.id)
     except Exception as e:
         return error_server(title="Delete User", error=str(e))

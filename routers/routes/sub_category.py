@@ -70,6 +70,6 @@ def delete_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
         sub_category = sub_category_service.delete_sub_category(db, sub_category_id)
         if not sub_category:
             return error_not_found(title="Delete Sub Category", resource="Sub Category")
-        return success_delete(title="Sub Category Deleted")
+        return success_delete(title="Sub Category Deleted", resource_id=sub_category.id)
     except Exception as e:
         return error_server(title="Delete Sub Category", error=str(e))

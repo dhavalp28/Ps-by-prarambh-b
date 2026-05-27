@@ -70,6 +70,6 @@ def delete_city(city_id: int, db: Session = Depends(get_db)):
         city = city_service.delete_city(db, city_id)
         if not city:
             return error_not_found(title="Delete City", resource="City")
-        return success_delete(title="City Deleted")
+        return success_delete(title="City Deleted", resource_id=city.id)
     except Exception as e:
         return error_server(title="Delete City", error=str(e))

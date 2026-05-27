@@ -61,7 +61,7 @@ def delete_business(business_id: int, db: Session = Depends(get_db)):
         business = business_service.delete_business(db, business_id)
         if not business:
             return error_not_found(title="Delete Business", resource="Business")
-        return success_delete(title="Business Deleted")
+        return success_delete(title="Business Deleted", resource_id=business.id)
     except Exception as e:
         return error_server(title="Delete Business", error=str(e))
 

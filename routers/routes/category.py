@@ -61,6 +61,6 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
         category = category_service.delete_category(db, category_id)
         if not category:
             return error_not_found(title="Delete Category", resource="Category")
-        return success_delete(title="Category Deleted")
+        return success_delete(title="Category Deleted", resource_id=category.id)
     except Exception as e:
         return error_server(title="Delete Category", error=str(e))
