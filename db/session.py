@@ -17,7 +17,7 @@ try:
     engine_kwargs = {
         "poolclass": pool_class,
         "connect_args": {
-            "connect_timeout": 10,
+            "connect_timeout": 30,  # Increased from 10 to 30 seconds
             "keepalives": 1,
             "keepalives_idle": 30,
             "sslmode": "require",
