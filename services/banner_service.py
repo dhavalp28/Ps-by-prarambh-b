@@ -6,8 +6,8 @@ from repositories import banner_repository
 from utils.upload import save_upload, delete_upload
 
 
-def get_all_banners(db: Session):
-    return banner_repository.get_all_banners(db)
+def get_all_banners(db: Session, city_id: Optional[int] = None):
+    return banner_repository.get_all_banners(db, city_id)
 
 
 def get_banner(db: Session, banner_id: int):
@@ -30,6 +30,7 @@ async def create_banner(
     redirect_url: Optional[str] = None,
     description: Optional[str] = None,
     sort_order: int = 0,
+    city_id: Optional[int] = None,
 ):
     existing = banner_repository.get_banner_by_title(db, title)
 
@@ -48,6 +49,7 @@ async def create_banner(
         "redirect_url": redirect_url or None,
         "description": description or None,
         "sort_order": sort_order,
+        "city_id": city_id,
     }
 
     return banner_repository.create_banner(db, banner_data)
@@ -62,6 +64,7 @@ async def update_banner(
     description: Optional[str] = None,
     sort_order: Optional[int] = None,
     is_active: Optional[bool] = None,
+    city_id: Optional[int] = None,
     image: Optional[UploadFile] = None,
 ):
     banner = banner_repository.get_banner_by_id(db, banner_id)
@@ -98,6 +101,9 @@ async def update_banner(
 
     if is_active is not None:
         update_data["is_active"] = is_active
+
+    if city_id is not None:
+        update_data["city_id"] = city_id
 
     # If a new image was uploaded, save it and delete the old one
     if image and image.filename:

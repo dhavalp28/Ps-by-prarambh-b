@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from typing import Optional
 
 from repositories import category_repository
 from schemas.category import CategoryCreate, CategoryUpdate
 
 
-def get_all_categories(db: Session):
-    return category_repository.get_all_categories(db)
+def get_all_categories(db: Session, city_id: Optional[int] = None):
+    return category_repository.get_all_categories(db, city_id)
 
 
 def get_category(db: Session, category_id: int):

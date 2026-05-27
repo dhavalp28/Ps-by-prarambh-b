@@ -4,12 +4,6 @@
 
 This guide explains which API endpoints to call for each use case in the OTP authentication flow.
 
-## API Base URL
-
-```
-Development: http://localhost:8000
-Production: https://api.example.com (update with actual URL)
-```
 
 ## Authentication Header
 

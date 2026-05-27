@@ -1,14 +1,21 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from db.models.sub_category import SubCategory
 
 
-def get_all_sub_categories(db: Session):
-    return db.query(SubCategory).all()
+def get_all_sub_categories(db: Session, city_id: Optional[int] = None):
+    query = db.query(SubCategory)
+    if city_id:
+        query = query.filter(SubCategory.city_id == city_id)
+    return query.all()
 
 
-def get_sub_categories_by_category(db: Session, category_id: int):
-    return db.query(SubCategory).filter(SubCategory.category_id == category_id).all()
+def get_sub_categories_by_category(db: Session, category_id: int, city_id: Optional[int] = None):
+    query = db.query(SubCategory).filter(SubCategory.category_id == category_id)
+    if city_id:
+        query = query.filter(SubCategory.city_id == city_id)
+    return query.all()
 
 
 def get_sub_category_by_id(db: Session, sub_category_id: int):

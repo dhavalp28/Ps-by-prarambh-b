@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from routers.deps import get_db
 from schemas.business import BusinessCreate, BusinessUpdate, BusinessResponse
@@ -14,9 +14,9 @@ router = APIRouter()
 
 
 @router.get("/")
-def list_businesses(db: Session = Depends(get_db)):
+def list_businesses(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
-        businesses = business_service.get_all_businesses(db)
+        businesses = business_service.get_all_businesses(db, city_id)
         return success_list(title="Businesses List", data=businesses)
     except Exception as e:
         return error_server(title="Businesses List", error=str(e))

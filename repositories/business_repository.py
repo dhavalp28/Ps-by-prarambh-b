@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from db.models.business import Business
 
 
-def get_all_businesses(db: Session):
-    return db.query(Business).order_by(Business.created_at.desc()).all()
+def get_all_businesses(db: Session, city_id: Optional[int] = None):
+    query = db.query(Business)
+    if city_id:
+        query = query.filter(Business.city_id == city_id)
+    return query.order_by(Business.created_at.desc()).all()
 
 
 def get_business_by_id(db: Session, business_id: int):

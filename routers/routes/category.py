@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from routers.deps import get_db
 from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
@@ -14,9 +14,9 @@ router = APIRouter()
 
 
 @router.get("/")
-def list_categories(db: Session = Depends(get_db)):
+def list_categories(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
-        categories = category_service.get_all_categories(db)
+        categories = category_service.get_all_categories(db, city_id)
         return success_list(title="Categories List", data=categories)
     except Exception as e:
         return error_server(title="Categories List", error=str(e))

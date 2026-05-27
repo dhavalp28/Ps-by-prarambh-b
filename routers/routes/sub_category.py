@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from routers.deps import get_db
 from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate, SubCategoryResponse
@@ -14,18 +14,18 @@ router = APIRouter()
 
 
 @router.get("/")
-def list_sub_categories(db: Session = Depends(get_db)):
+def list_sub_categories(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
-        sub_categories = sub_category_service.get_all_sub_categories(db)
+        sub_categories = sub_category_service.get_all_sub_categories(db, city_id)
         return success_list(title="Sub Categories List", data=sub_categories)
     except Exception as e:
         return error_server(title="Sub Categories List", error=str(e))
 
 
 @router.get("/by-category/{category_id}")
-def list_sub_categories_by_category(category_id: int, db: Session = Depends(get_db)):
+def list_sub_categories_by_category(category_id: int, city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
-        sub_categories = sub_category_service.get_sub_categories_by_category(db, category_id)
+        sub_categories = sub_category_service.get_sub_categories_by_category(db, category_id, city_id)
         return success_list(title="Sub Categories by Category", data=sub_categories)
     except Exception as e:
         return error_server(title="Sub Categories by Category", error=str(e))

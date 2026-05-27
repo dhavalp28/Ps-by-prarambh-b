@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from typing import Optional
 
 from repositories import business_repository
 from repositories.state_repository import get_state_by_id
@@ -41,8 +42,8 @@ def _validate_category(db: Session, category_id: int, sub_category_id: int | Non
             )
 
 
-def get_all_businesses(db: Session):
-    return business_repository.get_all_businesses(db)
+def get_all_businesses(db: Session, city_id: Optional[int] = None):
+    return business_repository.get_all_businesses(db, city_id)
 
 
 def get_business(db: Session, business_id: int):

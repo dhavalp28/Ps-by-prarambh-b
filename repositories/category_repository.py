@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from db.models.category import Category
 
 
-def get_all_categories(db: Session):
-    return db.query(Category).all()
+def get_all_categories(db: Session, city_id: Optional[int] = None):
+    query = db.query(Category)
+    if city_id:
+        query = query.filter(Category.city_id == city_id)
+    return query.all()
 
 
 def get_category_by_id(db: Session, category_id: int):

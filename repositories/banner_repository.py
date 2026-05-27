@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from db.models.banner import Banner
 
 
-def get_all_banners(db: Session):
-    return db.query(Banner).order_by(Banner.sort_order.asc(), Banner.id.asc()).all()
+def get_all_banners(db: Session, city_id: Optional[int] = None):
+    query = db.query(Banner)
+    if city_id:
+        query = query.filter(Banner.city_id == city_id)
+    return query.order_by(Banner.sort_order.asc(), Banner.id.asc()).all()
 
 
 def get_banner_by_id(db: Session, banner_id: int):

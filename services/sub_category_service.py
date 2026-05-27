@@ -1,15 +1,16 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from typing import Optional
 
 from repositories import sub_category_repository, category_repository
 from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate
 
 
-def get_all_sub_categories(db: Session):
-    return sub_category_repository.get_all_sub_categories(db)
+def get_all_sub_categories(db: Session, city_id: Optional[int] = None):
+    return sub_category_repository.get_all_sub_categories(db, city_id)
 
 
-def get_sub_categories_by_category(db: Session, category_id: int):
+def get_sub_categories_by_category(db: Session, category_id: int, city_id: Optional[int] = None):
     # Ensure the parent category exists
     category = category_repository.get_category_by_id(db, category_id)
 
@@ -19,7 +20,7 @@ def get_sub_categories_by_category(db: Session, category_id: int):
             detail="Category not found"
         )
 
-    return sub_category_repository.get_sub_categories_by_category(db, category_id)
+    return sub_category_repository.get_sub_categories_by_category(db, category_id, city_id)
 
 
 def get_sub_category(db: Session, sub_category_id: int):

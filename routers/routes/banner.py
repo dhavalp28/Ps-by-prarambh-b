@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -14,9 +14,9 @@ router = APIRouter()
 
 
 @router.get("/")
-def list_banners(db: Session = Depends(get_db)):
+def list_banners(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
-        banners = banner_service.get_all_banners(db)
+        banners = banner_service.get_all_banners(db, city_id)
         return success_list(title="Banners List", data=banners)
     except Exception as e:
         return error_server(title="Banners List", error=str(e))
@@ -40,6 +40,7 @@ async def create_banner(
     redirect_url: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     sort_order: int = Form(0),
+    city_id: Optional[int] = Form(None),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
@@ -51,6 +52,7 @@ async def create_banner(
             redirect_url=redirect_url,
             description=description,
             sort_order=sort_order,
+            city_id=city_id,
             image=image,
         )
         return success_create(title="Banner Created", data=banner)
@@ -67,6 +69,7 @@ async def update_banner(
     description: Optional[str] = Form(None),
     sort_order: Optional[int] = Form(None),
     is_active: Optional[bool] = Form(None),
+    city_id: Optional[int] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
@@ -80,6 +83,7 @@ async def update_banner(
             description=description,
             sort_order=sort_order,
             is_active=is_active,
+            city_id=city_id,
             image=image,
         )
         if not banner:

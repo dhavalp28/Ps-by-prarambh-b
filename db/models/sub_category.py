@@ -15,6 +15,7 @@ class SubCategory(Base):
     icon = Column(String, nullable=True)
 
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    city_id = Column(Integer, ForeignKey("cities.id", ondelete="CASCADE"), nullable=True)
 
     is_active = Column(Boolean, default=True)
 
@@ -23,3 +24,5 @@ class SubCategory(Base):
 
     # Relationship back to Category
     category = relationship("Category", backref="sub_categories")
+    # Relationship to City
+    city = relationship("City", backref="sub_categories")
