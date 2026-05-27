@@ -20,7 +20,9 @@ class User(Base):
 
     referral_code = Column(String, nullable=True)
 
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)  # Can be null for OTP-only login
+    
+    is_phone_verified = Column(Boolean, default=False)
 
     # Relationships
     state = relationship("State")

@@ -1,6 +1,7 @@
 from db.models.state import State
 from db.models.city import City
 from db.models.user import User
+from db.models.otp_session import OtpSession
 from db.models.category import Category
 from db.models.sub_category import SubCategory
 from db.models.banner import Banner
