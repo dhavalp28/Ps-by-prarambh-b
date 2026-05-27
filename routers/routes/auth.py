@@ -7,9 +7,7 @@ from schemas.auth import (
     RegisterVerifySchema,
     LoginSendOtpSchema,
     LoginVerifySchema,
-    ResendOtpSchema,
-    RegisterSchema,
-    LoginSchema
+    ResendOtpSchema
 )
 from services.otp_auth_service import (
     register_init,
@@ -19,22 +17,16 @@ from services.otp_auth_service import (
     resend_otp,
     update_phone_during_registration
 )
-from services.auth_service import (
-    register_user,
-    login_user
-)
 from utils.response import (
     success_create,
-    success_list,
     error_server,
-    error_validation,
-    error_not_found
+    error_validation
 )
 
 router = APIRouter()
 
 
-# ============ OTP-Based Authentication (New Flow) ============
+# ============ OTP-Based Authentication (Production Flow) ============
 
 @router.post("/register/init")
 def register_init_endpoint(
@@ -185,46 +177,3 @@ def update_phone_endpoint(
         if hasattr(e, 'status_code'):
             return error_validation(title="Update Phone", error=str(e.detail))
         return error_server(title="Update Phone", error=str(e))
-
-
-# ============ Legacy Password-Based Authentication (Kept for backward compatibility) ============
-
-@router.post("/send-otp")
-def send_otp(phone: str):
-    try:
-        # TODO: Implement actual OTP sending logic
-        return success_create(
-            title="OTP Sent",
-            data={"otp": "123456"},
-            message="OTP sent successfully to your phone"
-        )
-    except Exception as e:
-        return error_server(title="Send OTP", error=str(e))
-
-
-@router.post("/register")
-def register(
-    payload: RegisterSchema,
-    db: Session = Depends(get_db)
-):
-    try:
-        result = register_user(db, payload)
-        if isinstance(result, dict) and "error" in result:
-            return error_validation(title="Register", error=result["error"])
-        return success_create(title="User Registered", data=result, message="Registration successful")
-    except Exception as e:
-        return error_server(title="Register", error=str(e))
-
-
-@router.post("/login")
-def login(
-    payload: LoginSchema,
-    db: Session = Depends(get_db)
-):
-    try:
-        result = login_user(db, payload.phone, payload.password)
-        if isinstance(result, dict) and "error" in result:
-            return error_validation(title="Login", error=result["error"])
-        return success_create(title="Login Successful", data=result, message="Login successful")
-    except Exception as e:
-        return error_server(title="Login", error=str(e))
