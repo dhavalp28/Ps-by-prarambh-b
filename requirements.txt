@@ -9,3 +9,6 @@ bcrypt>=4.1,<6
 python-jose
 pydantic[email]
 email-validator
+qrcode[pil]
+pillow
+python-zipfile
