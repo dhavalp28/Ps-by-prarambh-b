@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
-from schemas.state import StateResponse
 from schemas.city import CityResponse
 from schemas.category import CategoryResponse
 from schemas.sub_category import SubCategoryResponse
@@ -130,7 +129,6 @@ class BusinessResponse(BaseModel):
     longitude:        Optional[float]
     business_type:    Optional[str]
 
-    state:           StateResponse
     city:            CityResponse
     category:        CategoryResponse
     sub_category:    Optional[SubCategoryResponse]

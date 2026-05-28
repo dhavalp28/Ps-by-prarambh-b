@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
-from schemas.state import StateResponse
 from schemas.city import CityResponse
 
 
@@ -15,7 +14,6 @@ class UserResponse(BaseModel):
     email: EmailStr
     phone: str
 
-    state: Optional[StateResponse]
     city: Optional[CityResponse]
 
     referral_code: Optional[str]
