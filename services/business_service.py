@@ -8,6 +8,7 @@ from repositories.city_repository import get_city_by_id
 from repositories.category_repository import get_category_by_id
 from repositories.sub_category_repository import get_sub_category_by_id
 from schemas.business import BusinessCreate, BusinessUpdate
+from services import business_code_service
 
 
 def _validate_location(db: Session, state_id: int, city_id: int):
@@ -57,7 +58,16 @@ def create_business(db: Session, payload: BusinessCreate):
     _validate_location(db, payload.state_id, payload.city_id)
     _validate_category(db, payload.category_id, payload.sub_category_id)
 
-    return business_repository.create_business(db, payload.model_dump())
+    business = business_repository.create_business(db, payload.model_dump())
+    
+    # Auto-generate business code
+    try:
+        business_code_service.create_business_code_for_business(db, business.id)
+    except Exception as e:
+        # Log error but don't fail the business creation
+        print(f"Error creating business code: {str(e)}")
+    
+    return business
 
 
 def update_business(db: Session, business_id: int, payload: BusinessUpdate):
