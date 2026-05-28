@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
 from schemas.state import StateResponse
@@ -6,6 +6,8 @@ from schemas.city import CityResponse
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     first_name: str
     last_name: str
@@ -17,14 +19,6 @@ class UserResponse(BaseModel):
     city: Optional[CityResponse]
 
     referral_code: Optional[str]
-
-    class Config:
-        from_attributes = True
-        fields = {
-            'state_id': {'exclude': True},
-            'city_id': {'exclude': True},
-            'hashed_password': {'exclude': True},
-        }
 
 
 class UserUpdate(BaseModel):

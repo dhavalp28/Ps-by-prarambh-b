@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -111,6 +111,8 @@ class BusinessUpdate(BaseModel):
 
 # ── Response ───────────────────────────────────────────────────────────────────
 class BusinessResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
 
     business_name:   str
@@ -120,7 +122,6 @@ class BusinessResponse(BaseModel):
     website:         Optional[str]
     logo_url:        Optional[str]
     cover_image_url: Optional[str]
-    owner_id:        Optional[int]
     owner:           Optional[OwnerSummary]
 
     business_address: str
@@ -157,13 +158,3 @@ class BusinessResponse(BaseModel):
     is_active:  bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
-        fields = {
-            'state_id': {'exclude': True},
-            'city_id': {'exclude': True},
-            'category_id': {'exclude': True},
-            'sub_category_id': {'exclude': True},
-            'owner_id': {'exclude': True},
-        }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -24,6 +24,8 @@ class SubCategoryUpdate(BaseModel):
 
 
 class SubCategoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     name: str
     description: Optional[str]
@@ -33,10 +35,3 @@ class SubCategoryResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
-        fields = {
-            'category_id': {'exclude': True},
-            'city_id': {'exclude': True},
-        }

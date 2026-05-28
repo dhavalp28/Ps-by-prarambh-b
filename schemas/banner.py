@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -27,6 +27,8 @@ class BannerUpdate(BaseModel):
 
 
 class BannerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     title: str
     subtitle: Optional[str]
@@ -38,9 +40,3 @@ class BannerResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
-        fields = {
-            'city_id': {'exclude': True},
-        }
