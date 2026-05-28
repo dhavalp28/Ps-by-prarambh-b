@@ -1,6 +1,6 @@
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 STATIC_OTP = "123456"  # For development/testing only
 
@@ -30,10 +30,17 @@ def verify_otp(entered_otp: str, real_otp: str, is_development: bool = True) -> 
 
 
 def get_otp_expiry_time(minutes: int = 10) -> datetime:
-    """Get OTP expiry time (default 10 minutes from now)"""
-    return datetime.utcnow() + timedelta(minutes=minutes)
+    """Get OTP expiry time (default 10 minutes from now) - Returns timezone-aware datetime"""
+    return datetime.now(timezone.utc) + timedelta(minutes=minutes)
 
 
 def is_otp_expired(expires_at: datetime) -> bool:
-    """Check if OTP has expired"""
-    return datetime.utcnow() > expires_at
+    """Check if OTP has expired - Handles both naive and aware datetimes"""
+    # Get current time in UTC
+    current_time = datetime.now(timezone.utc)
+    
+    # If expires_at is naive, assume it's UTC
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    return current_time > expires_at
