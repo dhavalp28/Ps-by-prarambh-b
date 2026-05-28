@@ -39,8 +39,12 @@ def is_otp_expired(expires_at: datetime) -> bool:
     # Get current time in UTC
     current_time = datetime.now(timezone.utc)
     
-    # If expires_at is naive, assume it's UTC
+    # If expires_at is naive, assume it's UTC and make it aware
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    # If current_time is naive (shouldn't happen), make it aware
+    if current_time.tzinfo is None:
+        current_time = current_time.replace(tzinfo=timezone.utc)
     
     return current_time > expires_at
