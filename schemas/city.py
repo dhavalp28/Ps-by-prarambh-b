@@ -1,6 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import datetime
 
 from schemas.state import StateResponse
 
@@ -17,13 +16,9 @@ class CityUpdate(BaseModel):
 
 
 class CityResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     name: str
-    state_id: int
     state: StateResponse
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
