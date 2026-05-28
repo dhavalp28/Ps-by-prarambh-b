@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, UploadFile
 from typing import Optional
 
-from repositories import category_repository
+from repositories import category_repository, sub_category_repository
 from schemas.category import CategoryCreate, CategoryUpdate
 from utils.upload import save_upload, delete_upload
 
@@ -91,6 +91,11 @@ async def update_category(
 
     if is_active is not None:
         update_data["is_active"] = is_active
+        # If deactivating category, also deactivate all child sub-categories
+        if not is_active:
+            sub_categories = sub_category_repository.get_sub_categories_by_category_id(db, category_id)
+            for sub_cat in sub_categories:
+                sub_category_repository.update_sub_category(db, sub_cat, {"is_active": False})
 
     # If a new icon was uploaded, save it and delete the old one
     if icon and icon.filename:
@@ -110,6 +115,13 @@ def delete_category(db: Session, category_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found"
         )
+
+    # Delete all child sub-categories and their icons
+    sub_categories = sub_category_repository.get_sub_categories_by_category_id(db, category_id)
+    for sub_cat in sub_categories:
+        if sub_cat.icon:
+            delete_upload(sub_cat.icon)
+        sub_category_repository.delete_sub_category(db, sub_cat)
 
     # Delete the icon file from disk if it exists
     if category.icon:

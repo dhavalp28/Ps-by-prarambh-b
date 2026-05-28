@@ -11,6 +11,10 @@ def get_all_categories(db: Session, city_id: Optional[int] = None):
     return query.all()
 
 
+def get_categories_by_city(db: Session, city_id: int):
+    return db.query(Category).filter(Category.city_id == city_id).all()
+
+
 def get_category_by_id(db: Session, category_id: int):
     return db.query(Category).filter(Category.id == category_id).first()
 

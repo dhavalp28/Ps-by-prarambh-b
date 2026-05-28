@@ -30,6 +30,11 @@ def get_sub_category_by_name_and_category(db: Session, name: str, category_id: i
     )
 
 
+def get_sub_categories_by_category_id(db: Session, category_id: int):
+    """Get all sub-categories for a specific category (without joinedload for bulk operations)"""
+    return db.query(SubCategory).filter(SubCategory.category_id == category_id).all()
+
+
 def create_sub_category(db: Session, sub_category_data: dict):
     sub_category = SubCategory(**sub_category_data)
 

@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from repositories import city_repository, state_repository
+from repositories import city_repository, state_repository, category_repository, sub_category_repository
 from schemas.city import CityCreate, CityUpdate
+from utils.upload import delete_upload
 
 
 def get_all_cities(db: Session):
@@ -87,6 +88,17 @@ def update_city(db: Session, city_id: int, payload: CityUpdate):
                     detail="City with this name already exists in the given state"
                 )
 
+    if "is_active" in update_data and not update_data["is_active"]:
+        # If deactivating city, also deactivate all child categories and their sub-categories
+        categories = category_repository.get_categories_by_city(db, city_id)
+        for category in categories:
+            # Deactivate all sub-categories of this category
+            sub_categories = sub_category_repository.get_sub_categories_by_category_id(db, category.id)
+            for sub_cat in sub_categories:
+                sub_category_repository.update_sub_category(db, sub_cat, {"is_active": False})
+            # Deactivate the category
+            category_repository.update_category(db, category, {"is_active": False})
+
     return city_repository.update_city(db, city, update_data)
 
 
@@ -98,6 +110,23 @@ def delete_city(db: Session, city_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="City not found"
         )
+
+    # Delete all child categories and their sub-categories
+    categories = category_repository.get_categories_by_city(db, city_id)
+    for category in categories:
+        # Delete all sub-categories of this category
+        sub_categories = sub_category_repository.get_sub_categories_by_category_id(db, category.id)
+        for sub_cat in sub_categories:
+            if sub_cat.icon:
+                delete_upload(sub_cat.icon)
+            sub_category_repository.delete_sub_category(db, sub_cat)
+        
+        # Delete the category icon
+        if category.icon:
+            delete_upload(category.icon)
+        
+        # Delete the category
+        category_repository.delete_category(db, category)
 
     city_repository.delete_city(db, city)
     return city
