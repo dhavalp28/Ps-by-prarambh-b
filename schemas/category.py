@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+from schemas.city import CityResponse
+
 
 class CategoryCreate(BaseModel):
     name: str
@@ -23,7 +25,7 @@ class CategoryResponse(BaseModel):
     name: str
     description: Optional[str]
     icon: Optional[str]
-    city_id: Optional[int]
+    city: Optional[CityResponse]
     is_active: bool
     created_at: datetime
     updated_at: datetime

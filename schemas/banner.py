@@ -2,6 +2,8 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from datetime import datetime
 
+from schemas.city import CityResponse
+
 
 class BannerCreate(BaseModel):
     title: str
@@ -32,7 +34,7 @@ class BannerResponse(BaseModel):
     redirect_url: Optional[str]
     description: Optional[str]
     sort_order: int
-    city_id: Optional[int]
+    city: Optional[CityResponse]
     is_active: bool
     created_at: datetime
     updated_at: datetime

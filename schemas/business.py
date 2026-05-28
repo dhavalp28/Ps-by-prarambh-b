@@ -129,13 +129,9 @@ class BusinessResponse(BaseModel):
     longitude:        Optional[float]
     business_type:    Optional[str]
 
-    state_id:        int
     state:           StateResponse
-    city_id:         int
     city:            CityResponse
-    category_id:     int
     category:        CategoryResponse
-    sub_category_id: Optional[int]
     sub_category:    Optional[SubCategoryResponse]
 
     open_time:  Optional[str]

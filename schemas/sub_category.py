@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 from schemas.category import CategoryResponse
+from schemas.city import CityResponse
 
 
 class SubCategoryCreate(BaseModel):
@@ -27,9 +28,8 @@ class SubCategoryResponse(BaseModel):
     name: str
     description: Optional[str]
     icon: Optional[str]
-    category_id: int
     category: CategoryResponse
-    city_id: Optional[int]
+    city: Optional[CityResponse]
     is_active: bool
     created_at: datetime
     updated_at: datetime

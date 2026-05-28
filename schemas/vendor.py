@@ -35,9 +35,7 @@ class VendorResponse(BaseModel):
     phone: str
     alt_phone: Optional[str]
     gender: str
-    state_id: int
     state: StateResponse
-    city_id: int
     city: CityResponse
     is_active: bool
     created_at: datetime

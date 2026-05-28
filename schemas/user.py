@@ -13,10 +13,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     phone: str
 
-    state_id: Optional[int]
     state: Optional[StateResponse]
-
-    city_id: Optional[int]
     city: Optional[CityResponse]
 
     referral_code: Optional[str]
