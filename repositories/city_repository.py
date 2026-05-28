@@ -1,18 +1,18 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from db.models.city import City
 
 
 def get_all_cities(db: Session):
-    return db.query(City).all()
+    return db.query(City).options(joinedload(City.state)).all()
 
 
 def get_cities_by_state(db: Session, state_id: int):
-    return db.query(City).filter(City.state_id == state_id).all()
+    return db.query(City).options(joinedload(City.state)).filter(City.state_id == state_id).all()
 
 
 def get_city_by_id(db: Session, city_id: int):
-    return db.query(City).filter(City.id == city_id).first()
+    return db.query(City).options(joinedload(City.state)).filter(City.id == city_id).first()
 
 
 def get_city_by_name_and_state(db: Session, name: str, state_id: int):
