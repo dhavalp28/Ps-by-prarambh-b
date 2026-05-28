@@ -1,22 +1,22 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 
 from db.models.banner import Banner
 
 
 def get_all_banners(db: Session, city_id: Optional[int] = None):
-    query = db.query(Banner)
+    query = db.query(Banner).options(joinedload(Banner.city))
     if city_id:
         query = query.filter(Banner.city_id == city_id)
     return query.order_by(Banner.sort_order.asc(), Banner.id.asc()).all()
 
 
 def get_banner_by_id(db: Session, banner_id: int):
-    return db.query(Banner).filter(Banner.id == banner_id).first()
+    return db.query(Banner).options(joinedload(Banner.city)).filter(Banner.id == banner_id).first()
 
 
 def get_banner_by_title(db: Session, title: str):
-    return db.query(Banner).filter(Banner.title == title).first()
+    return db.query(Banner).options(joinedload(Banner.city)).filter(Banner.title == title).first()
 
 
 def create_banner(db: Session, banner_data: dict):

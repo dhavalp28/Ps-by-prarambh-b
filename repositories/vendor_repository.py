@@ -1,22 +1,22 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from db.models.vendor import Vendor
 
 
 def get_all_vendors(db: Session):
-    return db.query(Vendor).order_by(Vendor.created_at.desc()).all()
+    return db.query(Vendor).options(joinedload(Vendor.state), joinedload(Vendor.city)).order_by(Vendor.created_at.desc()).all()
 
 
 def get_vendor_by_id(db: Session, vendor_id: int):
-    return db.query(Vendor).filter(Vendor.id == vendor_id).first()
+    return db.query(Vendor).options(joinedload(Vendor.state), joinedload(Vendor.city)).filter(Vendor.id == vendor_id).first()
 
 
 def get_vendor_by_email(db: Session, email: str):
-    return db.query(Vendor).filter(Vendor.email == email).first()
+    return db.query(Vendor).options(joinedload(Vendor.state), joinedload(Vendor.city)).filter(Vendor.email == email).first()
 
 
 def get_vendor_by_phone(db: Session, phone: str):
-    return db.query(Vendor).filter(Vendor.phone == phone).first()
+    return db.query(Vendor).options(joinedload(Vendor.state), joinedload(Vendor.city)).filter(Vendor.phone == phone).first()
 
 
 def create_vendor(db: Session, vendor_data: dict):

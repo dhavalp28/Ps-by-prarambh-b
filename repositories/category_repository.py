@@ -1,26 +1,26 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 
 from db.models.category import Category
 
 
 def get_all_categories(db: Session, city_id: Optional[int] = None):
-    query = db.query(Category)
+    query = db.query(Category).options(joinedload(Category.city))
     if city_id:
         query = query.filter(Category.city_id == city_id)
     return query.all()
 
 
 def get_categories_by_city(db: Session, city_id: int):
-    return db.query(Category).filter(Category.city_id == city_id).all()
+    return db.query(Category).options(joinedload(Category.city)).filter(Category.city_id == city_id).all()
 
 
 def get_category_by_id(db: Session, category_id: int):
-    return db.query(Category).filter(Category.id == category_id).first()
+    return db.query(Category).options(joinedload(Category.city)).filter(Category.id == category_id).first()
 
 
 def get_category_by_name(db: Session, name: str):
-    return db.query(Category).filter(Category.name == name).first()
+    return db.query(Category).options(joinedload(Category.city)).filter(Category.name == name).first()
 
 
 def create_category(db: Session, category_data: dict):

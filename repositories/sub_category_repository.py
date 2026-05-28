@@ -5,21 +5,21 @@ from db.models.sub_category import SubCategory
 
 
 def get_all_sub_categories(db: Session, city_id: Optional[int] = None):
-    query = db.query(SubCategory).options(joinedload(SubCategory.category))
+    query = db.query(SubCategory).options(joinedload(SubCategory.category), joinedload(SubCategory.city))
     if city_id:
         query = query.filter(SubCategory.city_id == city_id)
     return query.all()
 
 
 def get_sub_categories_by_category(db: Session, category_id: int, city_id: Optional[int] = None):
-    query = db.query(SubCategory).options(joinedload(SubCategory.category)).filter(SubCategory.category_id == category_id)
+    query = db.query(SubCategory).options(joinedload(SubCategory.category), joinedload(SubCategory.city)).filter(SubCategory.category_id == category_id)
     if city_id:
         query = query.filter(SubCategory.city_id == city_id)
     return query.all()
 
 
 def get_sub_category_by_id(db: Session, sub_category_id: int):
-    return db.query(SubCategory).options(joinedload(SubCategory.category)).filter(SubCategory.id == sub_category_id).first()
+    return db.query(SubCategory).options(joinedload(SubCategory.category), joinedload(SubCategory.city)).filter(SubCategory.id == sub_category_id).first()
 
 
 def get_sub_category_by_name_and_category(db: Session, name: str, category_id: int):

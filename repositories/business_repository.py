@@ -1,18 +1,28 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 
 from db.models.business import Business
 
 
 def get_all_businesses(db: Session, city_id: Optional[int] = None):
-    query = db.query(Business)
+    query = db.query(Business).options(
+        joinedload(Business.state),
+        joinedload(Business.city),
+        joinedload(Business.category),
+        joinedload(Business.sub_category)
+    )
     if city_id:
         query = query.filter(Business.city_id == city_id)
     return query.order_by(Business.created_at.desc()).all()
 
 
 def get_business_by_id(db: Session, business_id: int):
-    return db.query(Business).filter(Business.id == business_id).first()
+    return db.query(Business).options(
+        joinedload(Business.state),
+        joinedload(Business.city),
+        joinedload(Business.category),
+        joinedload(Business.sub_category)
+    ).filter(Business.id == business_id).first()
 
 
 def create_business(db: Session, data: dict):

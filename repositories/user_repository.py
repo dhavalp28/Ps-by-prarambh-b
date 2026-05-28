@@ -1,22 +1,22 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from db.models.user import User
 
 
 def get_user_by_phone(db: Session, phone: str):
-    return db.query(User).filter(User.phone == phone).first()
+    return db.query(User).options(joinedload(User.state), joinedload(User.city)).filter(User.phone == phone).first()
 
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(User).filter(User.email == email).first()
+    return db.query(User).options(joinedload(User.state), joinedload(User.city)).filter(User.email == email).first()
 
 
 def get_user_by_id(db: Session, user_id: int):
-    return db.query(User).filter(User.id == user_id).first()
+    return db.query(User).options(joinedload(User.state), joinedload(User.city)).filter(User.id == user_id).first()
 
 
 def get_all_users(db: Session):
-    return db.query(User).all()
+    return db.query(User).options(joinedload(User.state), joinedload(User.city)).all()
 
 
 def create_user(db: Session, user_data: dict):
