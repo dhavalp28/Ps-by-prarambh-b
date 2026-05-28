@@ -160,3 +160,10 @@ class BusinessResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        fields = {
+            'state_id': {'exclude': True},
+            'city_id': {'exclude': True},
+            'category_id': {'exclude': True},
+            'sub_category_id': {'exclude': True},
+            'owner_id': {'exclude': True},
+        }

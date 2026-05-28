@@ -20,6 +20,11 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        fields = {
+            'state_id': {'exclude': True},
+            'city_id': {'exclude': True},
+            'hashed_password': {'exclude': True},
+        }
 
 
 class UserUpdate(BaseModel):

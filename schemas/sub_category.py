@@ -36,3 +36,7 @@ class SubCategoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        fields = {
+            'category_id': {'exclude': True},
+            'city_id': {'exclude': True},
+        }

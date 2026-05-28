@@ -41,3 +41,6 @@ class BannerResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        fields = {
+            'city_id': {'exclude': True},
+        }
