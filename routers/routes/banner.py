@@ -41,6 +41,7 @@ async def create_banner(
     description: Optional[str] = Form(None),
     sort_order: int = Form(0),
     city_id: Optional[int] = Form(None),
+    is_active: bool = Form(True),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
@@ -53,6 +54,7 @@ async def create_banner(
             description=description,
             sort_order=sort_order,
             city_id=city_id,
+            is_active=is_active,
             image=image,
         )
         return success_create(title="Banner Created", data=banner)

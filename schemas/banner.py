@@ -10,6 +10,7 @@ class BannerCreate(BaseModel):
     redirect_url: Optional[str] = None
     description: Optional[str] = None
     sort_order: Optional[int] = 0
+    city_id: Optional[int] = None
 
 
 class BannerUpdate(BaseModel):
@@ -20,6 +21,7 @@ class BannerUpdate(BaseModel):
     description: Optional[str] = None
     sort_order: Optional[int] = None
     is_active: Optional[bool] = None
+    city_id: Optional[int] = None
 
 
 class BannerResponse(BaseModel):
@@ -30,6 +32,7 @@ class BannerResponse(BaseModel):
     redirect_url: Optional[str]
     description: Optional[str]
     sort_order: int
+    city_id: Optional[int]
     is_active: bool
     created_at: datetime
     updated_at: datetime
