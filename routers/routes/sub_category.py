@@ -17,7 +17,7 @@ router = APIRouter()
 def list_sub_categories(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
         sub_categories = sub_category_service.get_all_sub_categories(db, city_id)
-        return success_list(title="Sub Categories List", data=sub_categories)
+        return success_list(title="Sub Categories List", data=[SubCategoryResponse.model_validate(sc) for sc in sub_categories])
     except Exception as e:
         return error_server(title="Sub Categories List", error=str(e))
 
@@ -26,7 +26,7 @@ def list_sub_categories(city_id: Optional[int] = Query(None), db: Session = Depe
 def list_sub_categories_by_category(category_id: int, city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
         sub_categories = sub_category_service.get_sub_categories_by_category(db, category_id, city_id)
-        return success_list(title="Sub Categories by Category", data=sub_categories)
+        return success_list(title="Sub Categories by Category", data=[SubCategoryResponse.model_validate(sc) for sc in sub_categories])
     except Exception as e:
         return error_server(title="Sub Categories by Category", error=str(e))
 
@@ -37,7 +37,7 @@ def get_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
         sub_category = sub_category_service.get_sub_category(db, sub_category_id)
         if not sub_category:
             return error_not_found(title="Get Sub Category", resource="Sub Category")
-        return success_list(title="Sub Category Details", data=sub_category)
+        return success_list(title="Sub Category Details", data=SubCategoryResponse.model_validate(sub_category))
     except Exception as e:
         return error_server(title="Get Sub Category", error=str(e))
 
@@ -62,7 +62,7 @@ async def create_sub_category(
             is_active=is_active,
             icon=icon,
         )
-        return success_create(title="Sub Category Created", data=sub_category)
+        return success_create(title="Sub Category Created", data=SubCategoryResponse.model_validate(sub_category))
     except ValueError as e:
         return error_duplicate(title="Create Sub Category", resource="Sub Category")
     except Exception as e:
@@ -93,7 +93,7 @@ async def update_sub_category(
         )
         if not sub_category:
             return error_not_found(title="Update Sub Category", resource="Sub Category")
-        return success_update(title="Sub Category Updated", data=sub_category)
+        return success_update(title="Sub Category Updated", data=SubCategoryResponse.model_validate(sub_category))
     except Exception as e:
         return error_server(title="Update Sub Category", error=str(e))
 

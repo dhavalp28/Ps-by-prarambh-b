@@ -17,7 +17,7 @@ router = APIRouter()
 def list_users(db: Session = Depends(get_db)):
     try:
         users = user_service.get_all_users(db)
-        return success_list(title="Users List", data=users)
+        return success_list(title="Users List", data=[UserResponse.model_validate(u) for u in users])
     except Exception as e:
         return error_server(title="Users List", error=str(e))
 
@@ -28,7 +28,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         user = user_service.get_user(db, user_id)
         if not user:
             return error_not_found(title="Get User", resource="User")
-        return success_list(title="User Details", data=user)
+        return success_list(title="User Details", data=UserResponse.model_validate(user))
     except Exception as e:
         return error_server(title="Get User", error=str(e))
 
@@ -39,7 +39,7 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
         user = user_service.update_user(db, user_id, payload)
         if not user:
             return error_not_found(title="Update User", resource="User")
-        return success_update(title="User Updated", data=user)
+        return success_update(title="User Updated", data=UserResponse.model_validate(user))
     except Exception as e:
         return error_server(title="Update User", error=str(e))
 

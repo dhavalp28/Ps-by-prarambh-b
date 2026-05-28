@@ -17,7 +17,7 @@ router = APIRouter()
 def list_banners(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
         banners = banner_service.get_all_banners(db, city_id)
-        return success_list(title="Banners List", data=banners)
+        return success_list(title="Banners List", data=[BannerResponse.model_validate(b) for b in banners])
     except Exception as e:
         return error_server(title="Banners List", error=str(e))
 
@@ -28,7 +28,7 @@ def get_banner(banner_id: int, db: Session = Depends(get_db)):
         banner = banner_service.get_banner(db, banner_id)
         if not banner:
             return error_not_found(title="Get Banner", resource="Banner")
-        return success_list(title="Banner Details", data=banner)
+        return success_list(title="Banner Details", data=BannerResponse.model_validate(banner))
     except Exception as e:
         return error_server(title="Get Banner", error=str(e))
 
@@ -57,7 +57,7 @@ async def create_banner(
             is_active=is_active,
             image=image,
         )
-        return success_create(title="Banner Created", data=banner)
+        return success_create(title="Banner Created", data=BannerResponse.model_validate(banner))
     except Exception as e:
         return error_server(title="Create Banner", error=str(e))
 
@@ -90,7 +90,7 @@ async def update_banner(
         )
         if not banner:
             return error_not_found(title="Update Banner", resource="Banner")
-        return success_update(title="Banner Updated", data=banner)
+        return success_update(title="Banner Updated", data=BannerResponse.model_validate(banner))
     except Exception as e:
         return error_server(title="Update Banner", error=str(e))
 

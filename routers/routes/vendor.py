@@ -17,7 +17,7 @@ router = APIRouter()
 def list_vendors(db: Session = Depends(get_db)):
     try:
         vendors = vendor_service.get_all_vendors(db)
-        return success_list(title="Vendors List", data=vendors)
+        return success_list(title="Vendors List", data=[VendorResponse.model_validate(v) for v in vendors])
     except Exception as e:
         return error_server(title="Vendors List", error=str(e))
 
@@ -28,7 +28,7 @@ def get_vendor(vendor_id: int, db: Session = Depends(get_db)):
         vendor = vendor_service.get_vendor(db, vendor_id)
         if not vendor:
             return error_not_found(title="Get Vendor", resource="Vendor")
-        return success_list(title="Vendor Details", data=vendor)
+        return success_list(title="Vendor Details", data=VendorResponse.model_validate(vendor))
     except Exception as e:
         return error_server(title="Get Vendor", error=str(e))
 
@@ -37,7 +37,7 @@ def get_vendor(vendor_id: int, db: Session = Depends(get_db)):
 def create_vendor(payload: VendorCreate, db: Session = Depends(get_db)):
     try:
         vendor = vendor_service.create_vendor(db, payload)
-        return success_create(title="Vendor Created", data=vendor)
+        return success_create(title="Vendor Created", data=VendorResponse.model_validate(vendor))
     except ValueError as e:
         return error_duplicate(title="Create Vendor", resource="Vendor")
     except Exception as e:
@@ -50,7 +50,7 @@ def update_vendor(vendor_id: int, payload: VendorUpdate, db: Session = Depends(g
         vendor = vendor_service.update_vendor(db, vendor_id, payload)
         if not vendor:
             return error_not_found(title="Update Vendor", resource="Vendor")
-        return success_update(title="Vendor Updated", data=vendor)
+        return success_update(title="Vendor Updated", data=VendorResponse.model_validate(vendor))
     except Exception as e:
         return error_server(title="Update Vendor", error=str(e))
 
@@ -72,6 +72,6 @@ def toggle_active(vendor_id: int, db: Session = Depends(get_db)):
         vendor = vendor_service.toggle_active(db, vendor_id)
         if not vendor:
             return error_not_found(title="Toggle Vendor Active", resource="Vendor")
-        return success_update(title="Vendor Status Updated", data=vendor)
+        return success_update(title="Vendor Status Updated", data=VendorResponse.model_validate(vendor))
     except Exception as e:
         return error_server(title="Toggle Vendor Active", error=str(e))

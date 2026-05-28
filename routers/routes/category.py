@@ -17,7 +17,7 @@ router = APIRouter()
 def list_categories(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
         categories = category_service.get_all_categories(db, city_id)
-        return success_list(title="Categories List", data=categories)
+        return success_list(title="Categories List", data=[CategoryResponse.model_validate(c) for c in categories])
     except Exception as e:
         return error_server(title="Categories List", error=str(e))
 
@@ -28,7 +28,7 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
         category = category_service.get_category(db, category_id)
         if not category:
             return error_not_found(title="Get Category", resource="Category")
-        return success_list(title="Category Details", data=category)
+        return success_list(title="Category Details", data=CategoryResponse.model_validate(category))
     except Exception as e:
         return error_server(title="Get Category", error=str(e))
 
@@ -51,7 +51,7 @@ async def create_category(
             is_active=is_active,
             icon=icon,
         )
-        return success_create(title="Category Created", data=category)
+        return success_create(title="Category Created", data=CategoryResponse.model_validate(category))
     except ValueError as e:
         return error_duplicate(title="Create Category", resource="Category")
     except Exception as e:
@@ -80,7 +80,7 @@ async def update_category(
         )
         if not category:
             return error_not_found(title="Update Category", resource="Category")
-        return success_update(title="Category Updated", data=category)
+        return success_update(title="Category Updated", data=CategoryResponse.model_validate(category))
     except Exception as e:
         return error_server(title="Update Category", error=str(e))
 

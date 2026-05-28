@@ -17,7 +17,7 @@ router = APIRouter()
 def list_businesses(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     try:
         businesses = business_service.get_all_businesses(db, city_id)
-        return success_list(title="Businesses List", data=businesses)
+        return success_list(title="Businesses List", data=[BusinessResponse.model_validate(b) for b in businesses])
     except Exception as e:
         return error_server(title="Businesses List", error=str(e))
 
@@ -28,7 +28,7 @@ def get_business(business_id: int, db: Session = Depends(get_db)):
         business = business_service.get_business(db, business_id)
         if not business:
             return error_not_found(title="Get Business", resource="Business")
-        return success_list(title="Business Details", data=business)
+        return success_list(title="Business Details", data=BusinessResponse.model_validate(business))
     except Exception as e:
         return error_server(title="Get Business", error=str(e))
 
@@ -37,7 +37,7 @@ def get_business(business_id: int, db: Session = Depends(get_db)):
 def create_business(payload: BusinessCreate, db: Session = Depends(get_db)):
     try:
         business = business_service.create_business(db, payload)
-        return success_create(title="Business Created", data=business)
+        return success_create(title="Business Created", data=BusinessResponse.model_validate(business))
     except ValueError as e:
         return error_duplicate(title="Create Business", resource="Business")
     except Exception as e:
@@ -50,7 +50,7 @@ def update_business(business_id: int, payload: BusinessUpdate, db: Session = Dep
         business = business_service.update_business(db, business_id, payload)
         if not business:
             return error_not_found(title="Update Business", resource="Business")
-        return success_update(title="Business Updated", data=business)
+        return success_update(title="Business Updated", data=BusinessResponse.model_validate(business))
     except Exception as e:
         return error_server(title="Update Business", error=str(e))
 
@@ -72,6 +72,6 @@ def toggle_active(business_id: int, db: Session = Depends(get_db)):
         business = business_service.toggle_active(db, business_id)
         if not business:
             return error_not_found(title="Toggle Business Active", resource="Business")
-        return success_update(title="Business Status Updated", data=business)
+        return success_update(title="Business Status Updated", data=BusinessResponse.model_validate(business))
     except Exception as e:
         return error_server(title="Toggle Business Active", error=str(e))
