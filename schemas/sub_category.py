@@ -29,6 +29,7 @@ class SubCategoryResponse(BaseModel):
     icon: Optional[str]
     category_id: int
     category: CategoryResponse
+    city_id: Optional[int]
     is_active: bool
     created_at: datetime
     updated_at: datetime
