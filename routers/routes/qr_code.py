@@ -49,7 +49,7 @@ def generate_single_qr_sticker(
         return error_server(title="Generate QR Sticker", error=str(e))
 
 
-@router.post("/generate-bulk")
+@router.get("/generate-bulk")
 def generate_bulk_qr_stickers(
     business_ids: List[int] = Query(...),
     format: str = Query("png", regex="^(png|jpg|jpeg)$"),
