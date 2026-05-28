@@ -10,6 +10,7 @@ class SubCategoryCreate(BaseModel):
     description: Optional[str] = None
     icon: Optional[str] = None
     category_id: int
+    city_id: Optional[int] = None
 
 
 class SubCategoryUpdate(BaseModel):
@@ -17,6 +18,7 @@ class SubCategoryUpdate(BaseModel):
     description: Optional[str] = None
     icon: Optional[str] = None
     category_id: Optional[int] = None
+    city_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 

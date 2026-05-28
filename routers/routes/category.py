@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -34,9 +34,23 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_category(payload: CategoryCreate, db: Session = Depends(get_db)):
+async def create_category(
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    city_id: Optional[int] = Form(None),
+    is_active: bool = Form(True),
+    icon: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+):
     try:
-        category = category_service.create_category(db, payload)
+        category = await category_service.create_category(
+            db=db,
+            name=name,
+            description=description,
+            city_id=city_id,
+            is_active=is_active,
+            icon=icon,
+        )
         return success_create(title="Category Created", data=category)
     except ValueError as e:
         return error_duplicate(title="Create Category", resource="Category")
@@ -45,9 +59,25 @@ def create_category(payload: CategoryCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{category_id}")
-def update_category(category_id: int, payload: CategoryUpdate, db: Session = Depends(get_db)):
+async def update_category(
+    category_id: int,
+    name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    city_id: Optional[int] = Form(None),
+    is_active: Optional[bool] = Form(None),
+    icon: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+):
     try:
-        category = category_service.update_category(db, category_id, payload)
+        category = await category_service.update_category(
+            db=db,
+            category_id=category_id,
+            name=name,
+            description=description,
+            city_id=city_id,
+            is_active=is_active,
+            icon=icon,
+        )
         if not category:
             return error_not_found(title="Update Category", resource="Category")
         return success_update(title="Category Updated", data=category)

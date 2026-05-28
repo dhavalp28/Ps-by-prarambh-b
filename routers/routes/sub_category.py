@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -43,9 +43,25 @@ def get_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_sub_category(payload: SubCategoryCreate, db: Session = Depends(get_db)):
+async def create_sub_category(
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    category_id: int = Form(...),
+    city_id: Optional[int] = Form(None),
+    is_active: bool = Form(True),
+    icon: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+):
     try:
-        sub_category = sub_category_service.create_sub_category(db, payload)
+        sub_category = await sub_category_service.create_sub_category(
+            db=db,
+            name=name,
+            description=description,
+            category_id=category_id,
+            city_id=city_id,
+            is_active=is_active,
+            icon=icon,
+        )
         return success_create(title="Sub Category Created", data=sub_category)
     except ValueError as e:
         return error_duplicate(title="Create Sub Category", resource="Sub Category")
@@ -54,9 +70,27 @@ def create_sub_category(payload: SubCategoryCreate, db: Session = Depends(get_db
 
 
 @router.put("/{sub_category_id}")
-def update_sub_category(sub_category_id: int, payload: SubCategoryUpdate, db: Session = Depends(get_db)):
+async def update_sub_category(
+    sub_category_id: int,
+    name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    category_id: Optional[int] = Form(None),
+    city_id: Optional[int] = Form(None),
+    is_active: Optional[bool] = Form(None),
+    icon: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+):
     try:
-        sub_category = sub_category_service.update_sub_category(db, sub_category_id, payload)
+        sub_category = await sub_category_service.update_sub_category(
+            db=db,
+            sub_category_id=sub_category_id,
+            name=name,
+            description=description,
+            category_id=category_id,
+            city_id=city_id,
+            is_active=is_active,
+            icon=icon,
+        )
         if not sub_category:
             return error_not_found(title="Update Sub Category", resource="Sub Category")
         return success_update(title="Sub Category Updated", data=sub_category)
