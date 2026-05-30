@@ -19,7 +19,7 @@ def generate_single_qr_sticker(
     format: str = Query("png", pattern="^(png|jpg|jpeg)$"),
     db: Session = Depends(get_db)
 ):
-    """Generate a single QR code sticker for a business"""
+    """Public endpoint - Generate a single QR code sticker for a business"""
     try:
         # Get business
         business = get_business_by_id(db, business_id)
@@ -55,7 +55,7 @@ def generate_bulk_qr_stickers(
     format: str = Query("png", pattern="^(png|jpg|jpeg)$"),
     db: Session = Depends(get_db)
 ):
-    """Generate QR code stickers for multiple businesses and download as ZIP"""
+    """Public endpoint - Generate QR code stickers for multiple businesses and download as ZIP"""
     try:
         if not business_ids:
             raise HTTPException(status_code=400, detail="No business IDs provided")
@@ -97,7 +97,7 @@ def generate_all_qr_stickers(
     format: str = Query("png", pattern="^(png|jpg|jpeg)$"),
     db: Session = Depends(get_db)
 ):
-    """Generate QR code stickers for all businesses and download as ZIP"""
+    """Public endpoint - Generate QR code stickers for all businesses and download as ZIP"""
     try:
         # Get all businesses
         businesses = get_all_businesses(db, city_id=city_id)

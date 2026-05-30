@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from routers.deps import get_db
+from routers.deps import get_db, get_admin_user
 from schemas.banner import BannerResponse
 from services import banner_service
 from utils.response import (
@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/")
 def list_banners(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """Public endpoint - List all banners"""
     try:
         banners = banner_service.get_all_banners(db, city_id)
         return success_list(title="Banners List", data=[BannerResponse.model_validate(b) for b in banners])
@@ -24,6 +25,7 @@ def list_banners(city_id: Optional[int] = Query(None), db: Session = Depends(get
 
 @router.get("/{banner_id}")
 def get_banner(banner_id: int, db: Session = Depends(get_db)):
+    """Public endpoint - Get banner details"""
     try:
         banner = banner_service.get_banner(db, banner_id)
         if not banner:
@@ -33,7 +35,7 @@ def get_banner(banner_id: int, db: Session = Depends(get_db)):
         return error_server(title="Get Banner", error=str(e))
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_admin_user)])
 async def create_banner(
     title: str = Form(...),
     subtitle: Optional[str] = Form(None),
@@ -45,6 +47,7 @@ async def create_banner(
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
+    """Admin only - Create a new banner"""
     try:
         banner = await banner_service.create_banner(
             db=db,
@@ -62,7 +65,7 @@ async def create_banner(
         return error_server(title="Create Banner", error=str(e))
 
 
-@router.put("/{banner_id}")
+@router.put("/{banner_id}", dependencies=[Depends(get_admin_user)])
 async def update_banner(
     banner_id: int,
     title: Optional[str] = Form(None),
@@ -75,6 +78,7 @@ async def update_banner(
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
+    """Admin only - Update an existing banner"""
     try:
         banner = await banner_service.update_banner(
             db=db,
@@ -95,8 +99,9 @@ async def update_banner(
         return error_server(title="Update Banner", error=str(e))
 
 
-@router.delete("/{banner_id}")
+@router.delete("/{banner_id}", dependencies=[Depends(get_admin_user)])
 def delete_banner(banner_id: int, db: Session = Depends(get_db)):
+    """Admin only - Delete a banner"""
     try:
         banner = banner_service.delete_banner(db, banner_id)
         if not banner:

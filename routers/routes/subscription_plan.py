@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from routers.deps import get_db
+from routers.deps import get_db, get_admin_user
 from schemas.subscription_plan import SubscriptionPlanCreate, SubscriptionPlanUpdate, SubscriptionPlanResponse
 from services import subscription_plan_service
 from utils.response import (
@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/")
 def list_subscription_plans(db: Session = Depends(get_db)):
+    """Public endpoint - List all subscription plans"""
     try:
         plans = subscription_plan_service.get_all_plans(db)
         return success_list(title="Subscription Plans List", data=[SubscriptionPlanResponse.model_validate(p) for p in plans])
@@ -24,6 +25,7 @@ def list_subscription_plans(db: Session = Depends(get_db)):
 
 @router.get("/{plan_id}")
 def get_subscription_plan(plan_id: int, db: Session = Depends(get_db)):
+    """Public endpoint - Get subscription plan details"""
     try:
         plan = subscription_plan_service.get_plan(db, plan_id)
         if not plan:
@@ -33,8 +35,9 @@ def get_subscription_plan(plan_id: int, db: Session = Depends(get_db)):
         return error_server(title="Get Subscription Plan", error=str(e))
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_admin_user)])
 def create_subscription_plan(payload: SubscriptionPlanCreate, db: Session = Depends(get_db)):
+    """Admin only - Create a new subscription plan"""
     try:
         plan = subscription_plan_service.create_plan(db, payload.model_dump())
         return success_create(title="Subscription Plan Created", data=SubscriptionPlanResponse.model_validate(plan))
@@ -44,8 +47,9 @@ def create_subscription_plan(payload: SubscriptionPlanCreate, db: Session = Depe
         return error_server(title="Create Subscription Plan", error=str(e))
 
 
-@router.put("/{plan_id}")
+@router.put("/{plan_id}", dependencies=[Depends(get_admin_user)])
 def update_subscription_plan(plan_id: int, payload: SubscriptionPlanUpdate, db: Session = Depends(get_db)):
+    """Admin only - Update an existing subscription plan"""
     try:
         plan = subscription_plan_service.update_plan(db, plan_id, payload.model_dump(exclude_unset=True))
         if not plan:
@@ -55,8 +59,9 @@ def update_subscription_plan(plan_id: int, payload: SubscriptionPlanUpdate, db: 
         return error_server(title="Update Subscription Plan", error=str(e))
 
 
-@router.delete("/{plan_id}")
+@router.delete("/{plan_id}", dependencies=[Depends(get_admin_user)])
 def delete_subscription_plan(plan_id: int, db: Session = Depends(get_db)):
+    """Admin only - Delete a subscription plan"""
     try:
         plan = subscription_plan_service.delete_plan(db, plan_id)
         if not plan:
@@ -66,8 +71,9 @@ def delete_subscription_plan(plan_id: int, db: Session = Depends(get_db)):
         return error_server(title="Delete Subscription Plan", error=str(e))
 
 
-@router.patch("/{plan_id}/toggle-active")
+@router.patch("/{plan_id}/toggle-active", dependencies=[Depends(get_admin_user)])
 def toggle_subscription_plan_active(plan_id: int, db: Session = Depends(get_db)):
+    """Admin only - Toggle subscription plan active status"""
     try:
         plan = subscription_plan_service.toggle_plan_active(db, plan_id)
         if not plan:

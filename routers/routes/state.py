@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from routers.deps import get_db
+from routers.deps import get_db, get_admin_user
 from schemas.state import StateCreate, StateUpdate, StateResponse
 from services import state_service
 from utils.response import (
@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/")
 def list_states(db: Session = Depends(get_db)):
+    """Public endpoint - List all states"""
     try:
         states = state_service.get_all_states(db)
         return success_list(title="States List", data=states)
@@ -24,6 +25,7 @@ def list_states(db: Session = Depends(get_db)):
 
 @router.get("/{state_id}")
 def get_state(state_id: int, db: Session = Depends(get_db)):
+    """Public endpoint - Get state details"""
     try:
         state = state_service.get_state(db, state_id)
         if not state:
@@ -33,8 +35,9 @@ def get_state(state_id: int, db: Session = Depends(get_db)):
         return error_server(title="Get State", error=str(e))
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_admin_user)])
 def create_state(payload: StateCreate, db: Session = Depends(get_db)):
+    """Admin only - Create a new state"""
     try:
         state = state_service.create_state(db, payload)
         return success_create(title="State Created", data=state)
@@ -44,8 +47,9 @@ def create_state(payload: StateCreate, db: Session = Depends(get_db)):
         return error_server(title="Create State", error=str(e))
 
 
-@router.put("/{state_id}")
+@router.put("/{state_id}", dependencies=[Depends(get_admin_user)])
 def update_state(state_id: int, payload: StateUpdate, db: Session = Depends(get_db)):
+    """Admin only - Update an existing state"""
     try:
         state = state_service.update_state(db, state_id, payload)
         if not state:
@@ -55,8 +59,9 @@ def update_state(state_id: int, payload: StateUpdate, db: Session = Depends(get_
         return error_server(title="Update State", error=str(e))
 
 
-@router.delete("/{state_id}")
+@router.delete("/{state_id}", dependencies=[Depends(get_admin_user)])
 def delete_state(state_id: int, db: Session = Depends(get_db)):
+    """Admin only - Delete a state"""
     try:
         state = state_service.delete_state(db, state_id)
         if not state:
