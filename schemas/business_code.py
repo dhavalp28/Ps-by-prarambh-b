@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class BusinessCodeCreate(BaseModel):
@@ -9,7 +10,7 @@ class BusinessCodeCreate(BaseModel):
 
 class BusinessCodeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
     business_id: int
     code: str
@@ -20,6 +21,7 @@ class BusinessCodeResponse(BaseModel):
 
 class BusinessCodeValidateRequest(BaseModel):
     code: str
+    coupon_id: Optional[int] = None
 
 
 class BusinessCodeValidateResponse(BaseModel):

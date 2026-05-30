@@ -27,3 +27,4 @@ class User(Base):
     # Relationships
     state = relationship("State")
     city = relationship("City")
+    business_reviews = relationship("BusinessReview", back_populates="user")

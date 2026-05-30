@@ -50,6 +50,83 @@ def create_all_tables(engine) -> None:
     print("✓ Model-driven schema is applied (tables created if they did not exist).")
 
 
+def migrate_brand_support(engine) -> None:
+    """Add brand_id to businesses for older installs."""
+    insp = inspect(engine)
+    schema = "public"
+
+    if not insp.has_table("businesses", schema=schema):
+        print("– businesses table missing; skipping brand support migration")
+        return
+
+    cols = {c["name"] for c in insp.get_columns("businesses", schema=schema)}
+    if "brand_id" in cols:
+        print("– Brand support already present on businesses; nothing to ALTER.")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "ALTER TABLE public.businesses ADD COLUMN brand_id INTEGER REFERENCES public.brands(id) ON DELETE SET NULL;"
+            )
+        )
+        print("✓ Added brand_id column to businesses.")
+
+
+def migrate_business_module_extensions(engine) -> None:
+    """Add business review summary columns and supporting indexes for new business module tables."""
+    insp = inspect(engine)
+    schema = "public"
+
+    if not insp.has_table("businesses", schema=schema):
+        print(
+            "– businesses table missing; skipping business module extension migration"
+        )
+        return
+
+    cols = {c["name"] for c in insp.get_columns("businesses", schema=schema)}
+    stmts = []
+
+    if "average_rating" not in cols:
+        stmts.append(
+            "ALTER TABLE public.businesses ADD COLUMN average_rating DOUBLE PRECISION NOT NULL DEFAULT 0;"
+        )
+    if "total_reviews" not in cols:
+        stmts.append(
+            "ALTER TABLE public.businesses ADD COLUMN total_reviews INTEGER NOT NULL DEFAULT 0;"
+        )
+
+    with engine.begin() as conn:
+        for sql in stmts:
+            conn.execute(text(sql))
+        if stmts:
+            print("✓ Added business review summary columns on businesses.")
+        else:
+            print("– Business review summary columns already present on businesses.")
+
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_business_service_facilities_business_facility ON public.business_service_facilities (business_id, facility_id);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_business_gallery_business_sort_order ON public.business_gallery (business_id, sort_order);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_business_reviews_business_user ON public.business_reviews (business_id, user_id);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_business_reviews_business_active_updated ON public.business_reviews (business_id, is_active, updated_at DESC);"
+            )
+        )
+        print("✓ Ensured indexes for facilities, gallery, and reviews.")
+
+
 def migrate_legacy_users(engine) -> None:
     """Handle old installs that stored state/city as strings on users."""
     insp = inspect(engine)
@@ -143,6 +220,8 @@ def main() -> None:
 
     create_all_tables(engine)
 
+    migrate_brand_support(engine)
+    migrate_business_module_extensions(engine)
     migrate_legacy_users(engine)
 
     print("\n=== Done ===")

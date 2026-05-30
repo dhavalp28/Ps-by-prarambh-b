@@ -1,16 +1,18 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-
-from routers.router import api_router
-from db.session import engine
+import db.models.init  # noqa: F401
 from db.base import Base
+from db.session import engine
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from routers.app_router import app_router
+from routers.router import api_router
 
 # PS By Prarambh API - Backend Service
 # Version: 1.0.0
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,9 +32,7 @@ async def lifespan(app: FastAPI):
 
 # Writable upload root (bundle is read-only on Vercel except /tmp)
 _BASE_DIR = (
-    "/tmp/ps_by_prarambh"
-    if os.environ.get("VERCEL")
-    else os.path.dirname(__file__)
+    "/tmp/ps_by_prarambh" if os.environ.get("VERCEL") else os.path.dirname(__file__)
 )
 
 # Ensure upload directory exists
@@ -62,6 +62,7 @@ app.mount(
 )
 
 app.include_router(api_router)
+app.include_router(app_router)
 
 
 @app.get("/")

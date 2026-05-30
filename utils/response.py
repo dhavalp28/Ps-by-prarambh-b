@@ -1,9 +1,11 @@
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel
 
 
 class APIResponse(BaseModel):
     """Standard API Response Model"""
+
     response: bool
     title: str
     data: Optional[Any] = None
@@ -13,21 +15,19 @@ class APIResponse(BaseModel):
 
 class SuccessResponse:
     """Helper class to create success responses"""
-    
+
     @staticmethod
     def create(
-        title: str,
-        data: Optional[Any] = None,
-        message: Optional[str] = None
+        title: str, data: Optional[Any] = None, message: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Create a success response
-        
+
         Args:
             title: Response title/description
             data: Response data (can be list, dict, or any object)
             message: Optional success message
-            
+
         Returns:
             Dictionary with standardized response format
         """
@@ -36,29 +36,29 @@ class SuccessResponse:
             "title": title,
             "data": data,
             "message": message,
-            "error": None
+            "error": None,
         }
 
 
 class ErrorResponse:
     """Helper class to create error responses"""
-    
+
     @staticmethod
     def create(
         title: str,
-        error: str,
+        error: Optional[str],
         data: Optional[Any] = None,
-        message: Optional[str] = None
+        message: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create an error response
-        
+
         Args:
             title: Response title/description
             error: Error message/description
             data: Optional error data
             message: Optional additional message
-            
+
         Returns:
             Dictionary with standardized error response format
         """
@@ -67,88 +67,78 @@ class ErrorResponse:
             "title": title,
             "data": data,
             "message": message,
-            "error": error
+            "error": error,
         }
 
 
 # Predefined response helpers for common scenarios
 
-def success_list(title: str, data: list, message: str = None) -> Dict[str, Any]:
+
+def success_list(
+    title: str, data: Any, message: Optional[str] = None
+) -> Dict[str, Any]:
     """Success response for list operations"""
     return SuccessResponse.create(title=title, data=data, message=message)
 
 
-def success_create(title: str, data: Any, message: str = None) -> Dict[str, Any]:
+def success_create(
+    title: str, data: Any, message: Optional[str] = None
+) -> Dict[str, Any]:
     """Success response for create operations"""
     return SuccessResponse.create(
-        title=title,
-        data=data,
-        message=message or "Created successfully"
+        title=title, data=data, message=message or "Created successfully"
     )
 
 
-def success_update(title: str, data: Any, message: str = None) -> Dict[str, Any]:
+def success_update(
+    title: str, data: Any, message: Optional[str] = None
+) -> Dict[str, Any]:
     """Success response for update operations"""
     return SuccessResponse.create(
-        title=title,
-        data=data,
-        message=message or "Updated successfully"
+        title=title, data=data, message=message or "Updated successfully"
     )
 
 
-def success_delete(title: str, resource_id: int = None, message: str = None) -> Dict[str, Any]:
+def success_delete(
+    title: str,
+    resource_id: Optional[int] = None,
+    message: Optional[str] = None,
+) -> Dict[str, Any]:
     """Success response for delete operations"""
     return SuccessResponse.create(
         title=title,
         data={"id": resource_id} if resource_id else None,
-        message=message or "Deleted successfully"
+        message=message or "Deleted successfully",
     )
 
 
 def error_not_found(title: str, resource: str = "Resource") -> Dict[str, Any]:
     """Error response for not found"""
-    return ErrorResponse.create(
-        title=title,
-        error=f"{resource} not found"
-    )
+    return ErrorResponse.create(title=title, error=f"{resource} not found")
 
 
 def error_validation(title: str, error: str, data: Any = None) -> Dict[str, Any]:
     """Error response for validation errors"""
-    return ErrorResponse.create(
-        title=title,
-        error=error,
-        data=data
-    )
+    return ErrorResponse.create(title=title, error=error, data=data)
 
 
 def error_duplicate(title: str, resource: str = "Resource") -> Dict[str, Any]:
     """Error response for duplicate entries"""
-    return ErrorResponse.create(
-        title=title,
-        error=f"{resource} already exists"
-    )
+    return ErrorResponse.create(title=title, error=f"{resource} already exists")
 
 
-def error_server(title: str, error: str = "Internal server error") -> Dict[str, Any]:
+def error_server(
+    title: str, error: Optional[str] = "Internal server error"
+) -> Dict[str, Any]:
     """Error response for server errors"""
-    return ErrorResponse.create(
-        title=title,
-        error=error
-    )
+    return ErrorResponse.create(title=title, error=error)
 
 
 def error_unauthorized(title: str = "Unauthorized") -> Dict[str, Any]:
     """Error response for unauthorized access"""
-    return ErrorResponse.create(
-        title=title,
-        error="Unauthorized access"
-    )
+    return ErrorResponse.create(title=title, error="Unauthorized access")
 
 
 def error_forbidden(title: str = "Forbidden") -> Dict[str, Any]:
     """Error response for forbidden access"""
-    return ErrorResponse.create(
-        title=title,
-        error="Access forbidden"
-    )
+    return ErrorResponse.create(title=title, error="Access forbidden")

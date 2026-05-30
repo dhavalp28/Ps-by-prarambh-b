@@ -2,13 +2,16 @@ from fastapi import APIRouter
 from routers.routes import (
     auth,
     banner,
+    brand,
     business,
     business_code,
     category,
     city,
+    coupon,
     profile,
     qr_code,
     redemption,
+    service_facility,
     state,
     sub_category,
     subscription_plan,
@@ -27,10 +30,17 @@ api_router.include_router(vendor.router, prefix="/vendors", tags=["Vendor"])
 api_router.include_router(
     vendor_dashboard.router, prefix="/vendor-dashboard", tags=["Vendor Dashboard"]
 )
+api_router.include_router(brand.router, prefix="/brands", tags=["Brand"])
 api_router.include_router(business.router, prefix="/businesses", tags=["Business"])
 api_router.include_router(state.router, prefix="/states", tags=["State"])
 api_router.include_router(city.router, prefix="/cities", tags=["City"])
+api_router.include_router(coupon.router, prefix="/coupons", tags=["Coupon"])
 api_router.include_router(category.router, prefix="/categories", tags=["Category"])
+api_router.include_router(
+    service_facility.router,
+    prefix="/service-facilities",
+    tags=["Service Facility"],
+)
 api_router.include_router(
     sub_category.router, prefix="/sub-categories", tags=["Sub-Category"]
 )

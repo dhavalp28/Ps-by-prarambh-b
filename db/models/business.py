@@ -8,6 +8,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    text,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -28,6 +29,9 @@ class Business(Base):
     cover_image_url = Column(String, nullable=True)
 
     owner_id = Column(Integer, ForeignKey("vendors.id"), nullable=True)
+    brand_id = Column(
+        Integer, ForeignKey("brands.id", ondelete="SET NULL"), nullable=True
+    )
 
     # ── Location ───────────────────────────────────────────────────────────
     business_address = Column(String, nullable=False)
@@ -64,6 +68,10 @@ class Business(Base):
     interior_photos = Column(Text, nullable=True)  # comma-separated URLs
 
     # ── Meta ───────────────────────────────────────────────────────────────
+    average_rating = Column(
+        Float, nullable=False, default=0.0, server_default=text("0")
+    )
+    total_reviews = Column(Integer, nullable=False, default=0, server_default=text("0"))
     is_active = Column(Boolean, default=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -77,4 +85,24 @@ class Business(Base):
     category = relationship("Category")
     sub_category = relationship("SubCategory")
     owner = relationship("Vendor")
-    business_code = relationship("BusinessCode", uselist=False)
+    brand = relationship("Brand", back_populates="businesses")
+    business_code = relationship(
+        "BusinessCode", uselist=False, back_populates="business"
+    )
+    coupons = relationship("Coupon", back_populates="business")
+    service_facility_links = relationship(
+        "BusinessServiceFacility",
+        back_populates="business",
+        cascade="all, delete-orphan",
+    )
+    gallery_images = relationship(
+        "BusinessGallery",
+        back_populates="business",
+        cascade="all, delete-orphan",
+        order_by="BusinessGallery.sort_order.asc(), BusinessGallery.id.asc()",
+    )
+    reviews = relationship(
+        "BusinessReview",
+        back_populates="business",
+        cascade="all, delete-orphan",
+    )

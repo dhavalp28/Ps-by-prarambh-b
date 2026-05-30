@@ -38,9 +38,13 @@ def redeem_coupon(
     Redeem a coupon using business code (Authenticated users only)
     """
     try:
-        result = redemption_service.redeem_coupon(db, current_user.id, payload.code)
+        result = redemption_service.redeem_coupon(
+            db, current_user.id, payload.code, payload.coupon_id
+        )
         return success_create(title="Coupon Redeemed", data=result)
     except Exception as e:
+        if hasattr(e, "detail"):
+            return error_server(title="Redeem Coupon", error=str(e.detail))
         return error_server(title="Redeem Coupon", error=str(e))
 
 
