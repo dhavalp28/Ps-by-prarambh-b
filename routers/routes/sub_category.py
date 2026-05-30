@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from routers.deps import get_db
+from routers.deps import get_db, get_admin_user
 from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate, SubCategoryResponse
 from services import sub_category_service
 from utils.response import (
@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/")
 def list_sub_categories(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """List all sub-categories (Public endpoint)"""
     try:
         sub_categories = sub_category_service.get_all_sub_categories(db, city_id)
         return success_list(title="Sub Categories List", data=[SubCategoryResponse.model_validate(sc) for sc in sub_categories])
@@ -24,6 +25,7 @@ def list_sub_categories(city_id: Optional[int] = Query(None), db: Session = Depe
 
 @router.get("/by-category/{category_id}")
 def list_sub_categories_by_category(category_id: int, city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """List sub-categories by category (Public endpoint)"""
     try:
         sub_categories = sub_category_service.get_sub_categories_by_category(db, category_id, city_id)
         return success_list(title="Sub Categories by Category", data=[SubCategoryResponse.model_validate(sc) for sc in sub_categories])
@@ -33,6 +35,7 @@ def list_sub_categories_by_category(category_id: int, city_id: Optional[int] = Q
 
 @router.get("/{sub_category_id}")
 def get_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
+    """Get specific sub-category (Public endpoint)"""
     try:
         sub_category = sub_category_service.get_sub_category(db, sub_category_id)
         if not sub_category:
@@ -42,7 +45,7 @@ def get_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
         return error_server(title="Get Sub Category", error=str(e))
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_admin_user)])
 async def create_sub_category(
     name: str = Form(...),
     description: Optional[str] = Form(None),
@@ -52,6 +55,7 @@ async def create_sub_category(
     icon: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
+    """Create sub-category (Admin only)"""
     try:
         sub_category = await sub_category_service.create_sub_category(
             db=db,
@@ -69,7 +73,7 @@ async def create_sub_category(
         return error_server(title="Create Sub Category", error=str(e))
 
 
-@router.put("/{sub_category_id}")
+@router.put("/{sub_category_id}", dependencies=[Depends(get_admin_user)])
 async def update_sub_category(
     sub_category_id: int,
     name: Optional[str] = Form(None),
@@ -80,6 +84,7 @@ async def update_sub_category(
     icon: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
+    """Update sub-category (Admin only)"""
     try:
         sub_category = await sub_category_service.update_sub_category(
             db=db,
@@ -98,8 +103,9 @@ async def update_sub_category(
         return error_server(title="Update Sub Category", error=str(e))
 
 
-@router.delete("/{sub_category_id}")
+@router.delete("/{sub_category_id}", dependencies=[Depends(get_admin_user)])
 def delete_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
+    """Delete sub-category (Admin only)"""
     try:
         sub_category = sub_category_service.delete_sub_category(db, sub_category_id)
         if not sub_category:

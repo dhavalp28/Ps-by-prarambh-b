@@ -46,3 +46,21 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         )
     
     return user
+
+
+def get_admin_user(current_user = Depends(get_current_user)):
+    """
+    Get current user and verify they are an admin
+    
+    For now, we check if user_id is 1 (first user is admin)
+    In production, implement proper admin role in User model
+    """
+    # TODO: Implement proper admin role in User model
+    # For now, only user_id 1 is admin
+    if current_user.id != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    
+    return current_user

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from routers.deps import get_db
+from routers.deps import get_db, get_admin_user
 from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
 from services import category_service
 from utils.response import (
@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/")
 def list_categories(city_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """List all categories (Public endpoint)"""
     try:
         categories = category_service.get_all_categories(db, city_id)
         return success_list(title="Categories List", data=[CategoryResponse.model_validate(c) for c in categories])
@@ -24,6 +25,7 @@ def list_categories(city_id: Optional[int] = Query(None), db: Session = Depends(
 
 @router.get("/{category_id}")
 def get_category(category_id: int, db: Session = Depends(get_db)):
+    """Get specific category (Public endpoint)"""
     try:
         category = category_service.get_category(db, category_id)
         if not category:
@@ -33,7 +35,7 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
         return error_server(title="Get Category", error=str(e))
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_admin_user)])
 async def create_category(
     name: str = Form(...),
     description: Optional[str] = Form(None),
@@ -42,6 +44,7 @@ async def create_category(
     icon: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
+    """Create category (Admin only)"""
     try:
         category = await category_service.create_category(
             db=db,
@@ -58,7 +61,7 @@ async def create_category(
         return error_server(title="Create Category", error=str(e))
 
 
-@router.put("/{category_id}")
+@router.put("/{category_id}", dependencies=[Depends(get_admin_user)])
 async def update_category(
     category_id: int,
     name: Optional[str] = Form(None),
@@ -68,6 +71,7 @@ async def update_category(
     icon: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
+    """Update category (Admin only)"""
     try:
         category = await category_service.update_category(
             db=db,
@@ -85,8 +89,9 @@ async def update_category(
         return error_server(title="Update Category", error=str(e))
 
 
-@router.delete("/{category_id}")
+@router.delete("/{category_id}", dependencies=[Depends(get_admin_user)])
 def delete_category(category_id: int, db: Session = Depends(get_db)):
+    """Delete category (Admin only)"""
     try:
         category = category_service.delete_category(db, category_id)
         if not category:

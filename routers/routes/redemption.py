@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 
-from routers.deps import get_db
+from routers.deps import get_db, get_current_user, get_admin_user
 from schemas.redemption_history import (
     RedemptionHistoryResponse,
     RedemptionSummaryResponse,
@@ -20,14 +20,12 @@ router = APIRouter()
 
 
 @router.post("/redeem")
-def redeem_coupon(payload: BusinessCodeValidateRequest, db: Session = Depends(get_db)):
-    """Redeem a coupon using business code"""
+def redeem_coupon(payload: BusinessCodeValidateRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Redeem a coupon using business code (Authenticated users only)
+    """
     try:
-        # Get user_id from auth (for now using a test user)
-        # In production, this would come from the authenticated user
-        user_id = 1  # TODO: Get from auth token
-        
-        result = redemption_service.redeem_coupon(db, user_id, payload.code)
+        result = redemption_service.redeem_coupon(db, current_user.id, payload.code)
         return success_create(title="Coupon Redeemed", data=result)
     except Exception as e:
         return error_server(title="Redeem Coupon", error=str(e))
@@ -35,7 +33,9 @@ def redeem_coupon(payload: BusinessCodeValidateRequest, db: Session = Depends(ge
 
 @router.post("/validate-code")
 def validate_business_code(payload: BusinessCodeValidateRequest, db: Session = Depends(get_db)):
-    """Validate a business code"""
+    """
+    Validate a business code (Public endpoint)
+    """
     try:
         result = business_code_service.validate_business_code(db, payload.code)
         return success_list(title="Business Code Validation", data=result)
@@ -44,13 +44,12 @@ def validate_business_code(payload: BusinessCodeValidateRequest, db: Session = D
 
 
 @router.get("/summary")
-def get_redemption_summary(db: Session = Depends(get_db)):
-    """Get user redemption summary"""
+def get_redemption_summary(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Get user redemption summary (Authenticated users only)
+    """
     try:
-        # Get user_id from auth
-        user_id = 1  # TODO: Get from auth token
-        
-        summary = redemption_service.get_user_redemption_summary(db, user_id)
+        summary = redemption_service.get_user_redemption_summary(db, current_user.id)
         return success_list(title="Redemption Summary", data=summary)
     except Exception as e:
         return error_server(title="Get Redemption Summary", error=str(e))
@@ -65,10 +64,23 @@ def get_redemption_history(
     status: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get redemption history with filters and pagination"""
+    """
+    Get redemption history with filters and pagination (Authenticated users only)
+    
+    Admin users can filter by any user_id, regular users can only see their own history
+    """
     try:
+        # If not admin, only allow viewing own history
+        if current_user.id != 1 and user_id and user_id != current_user.id:
+            return error_server(title="Get Redemption History", error="You can only view your own redemption history")
+        
+        # If not admin and no user_id specified, default to current user
+        if current_user.id != 1 and not user_id:
+            user_id = current_user.id
+        
         redemptions, total = redemption_service.get_redemptions_with_filters(
             db,
             skip=skip,
@@ -92,9 +104,11 @@ def get_redemption_history(
         return error_server(title="Get Redemption History", error=str(e))
 
 
-@router.get("/analytics")
+@router.get("/analytics", dependencies=[Depends(get_admin_user)])
 def get_analytics(db: Session = Depends(get_db)):
-    """Get redemption analytics"""
+    """
+    Get redemption analytics (Admin only)
+    """
     try:
         analytics = redemption_service.get_analytics(db)
         return success_list(title="Redemption Analytics", data=analytics)
