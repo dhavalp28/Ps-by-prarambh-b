@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("/generate-single/{business_id}")
 def generate_single_qr_sticker(
     business_id: int,
-    format: str = Query("png", regex="^(png|jpg|jpeg)$"),
+    format: str = Query("png", pattern="^(png|jpg|jpeg)$"),
     db: Session = Depends(get_db)
 ):
     """Generate a single QR code sticker for a business"""
@@ -52,7 +52,7 @@ def generate_single_qr_sticker(
 @router.get("/generate-bulk")
 def generate_bulk_qr_stickers(
     business_ids: List[int] = Query(...),
-    format: str = Query("png", regex="^(png|jpg|jpeg)$"),
+    format: str = Query("png", pattern="^(png|jpg|jpeg)$"),
     db: Session = Depends(get_db)
 ):
     """Generate QR code stickers for multiple businesses and download as ZIP"""
@@ -94,7 +94,7 @@ def generate_bulk_qr_stickers(
 @router.get("/generate-all")
 def generate_all_qr_stickers(
     city_id: Optional[int] = None,
-    format: str = Query("png", regex="^(png|jpg|jpeg)$"),
+    format: str = Query("png", pattern="^(png|jpg|jpeg)$"),
     db: Session = Depends(get_db)
 ):
     """Generate QR code stickers for all businesses and download as ZIP"""
