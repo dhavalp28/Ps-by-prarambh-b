@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from routers.routes import auth, user, category, sub_category, state, city, banner, vendor, business, subscription_plan, redemption, qr_code, business_code
+from routers.routes import auth, user, category, sub_category, state, city, banner, vendor, business, subscription_plan, redemption, qr_code, business_code, profile
 
 api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
+api_router.include_router(profile.router, prefix="/auth", tags=["Profile"])
 api_router.include_router(user.router, prefix="/users", tags=["User"])
 api_router.include_router(vendor.router, prefix="/vendors", tags=["Vendor"])
 api_router.include_router(business.router, prefix="/businesses", tags=["Business"])

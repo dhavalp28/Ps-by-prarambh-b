@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from schemas.city import CityResponse
 
 
 # ============ Registration Flow ============
@@ -41,6 +42,28 @@ class ResendOtpSchema(BaseModel):
     otp_session_id: int
 
 
+# ============ Profile Management ============
+
+class ProfileUpdateSchema(BaseModel):
+    """Update user profile"""
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    state_id: Optional[int] = None
+    city_id: Optional[int] = None
+
+
+class ChangePhoneInitSchema(BaseModel):
+    """Initiate phone change - send OTP to new phone"""
+    new_phone: str
+
+
+class ChangePhoneVerifySchema(BaseModel):
+    """Verify OTP and complete phone change"""
+    otp_session_id: int
+    otp: str
+
+
 # ============ Response Schemas ============
 
 class OtpSessionResponse(BaseModel):
@@ -63,6 +86,7 @@ class UserResponse(BaseModel):
     email: str
     phone: str
     is_phone_verified: bool
+    city: Optional[CityResponse] = None
     
     class Config:
         from_attributes = True

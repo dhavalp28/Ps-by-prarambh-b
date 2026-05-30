@@ -390,3 +390,251 @@ def update_phone_during_registration(db: Session, otp_session_id: int, new_phone
         "message": "OTP sent to new phone number. Please verify within 10 minutes.",
         "otp": new_otp  # Remove in production
     }
+
+
+# ============ Profile Management ============
+
+def get_user_profile(db: Session, user_id: int):
+    """
+    Get current user profile
+    """
+    from repositories.user_repository import get_user_by_id
+    
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    
+    return {
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone": user.phone,
+        "is_phone_verified": user.is_phone_verified,
+        "city": {
+            "id": user.city.id,
+            "name": user.city.name,
+            "state": {
+                "id": user.city.state.id,
+                "name": user.city.state.name
+            }
+        } if user.city else None,
+        "referral_code": user.referral_code
+    }
+
+
+def update_user_profile(db: Session, user_id: int, data):
+    """
+    Update user profile (name, email, location)
+    """
+    from repositories.user_repository import get_user_by_id
+    
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    
+    # Check if new email is already registered (if email is being changed)
+    if data.email and data.email != user.email:
+        existing_email = get_user_by_email(db, data.email)
+        if existing_email:
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered"
+            )
+    
+    # Validate state and city if provided
+    if data.state_id or data.city_id:
+        state_id = data.state_id or user.city.state_id
+        city_id = data.city_id or user.city_id
+        
+        state = get_state_by_id(db, state_id)
+        if not state:
+            raise HTTPException(
+                status_code=404,
+                detail="State not found"
+            )
+        
+        city = get_city_by_id(db, city_id)
+        if not city:
+            raise HTTPException(
+                status_code=404,
+                detail="City not found"
+            )
+        
+        if city.state_id != state_id:
+            raise HTTPException(
+                status_code=400,
+                detail="City does not belong to the selected state"
+            )
+    
+    # Prepare update data
+    update_data = {}
+    if data.first_name:
+        update_data["first_name"] = data.first_name
+    if data.last_name:
+        update_data["last_name"] = data.last_name
+    if data.email:
+        update_data["email"] = data.email
+    if data.state_id:
+        update_data["state_id"] = data.state_id
+    if data.city_id:
+        update_data["city_id"] = data.city_id
+    
+    # Update user
+    updated_user = update_user(db, user, update_data)
+    
+    return {
+        "id": updated_user.id,
+        "first_name": updated_user.first_name,
+        "last_name": updated_user.last_name,
+        "email": updated_user.email,
+        "phone": updated_user.phone,
+        "is_phone_verified": updated_user.is_phone_verified,
+        "city": {
+            "id": updated_user.city.id,
+            "name": updated_user.city.name,
+            "state": {
+                "id": updated_user.city.state.id,
+                "name": updated_user.city.state.name
+            }
+        } if updated_user.city else None,
+        "referral_code": updated_user.referral_code
+    }
+
+
+def change_phone_init(db: Session, user_id: int, new_phone: str):
+    """
+    Step 1: Initiate phone change - send OTP to new phone
+    """
+    from repositories.user_repository import get_user_by_id
+    
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    
+    # Check if new phone is already registered
+    existing_user = get_user_by_phone(db, new_phone)
+    if existing_user and existing_user.id != user_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Phone number already registered"
+        )
+    
+    # Generate OTP
+    otp = generate_otp()
+    expires_at = get_otp_expiry_time(minutes=10)
+    
+    # Store temporary data
+    temp_data = {
+        "user_id": user_id,
+        "old_phone": user.phone,
+        "new_phone": new_phone
+    }
+    
+    # Create OTP session
+    otp_session = create_otp_session(
+        db=db,
+        phone=new_phone,
+        otp=otp,
+        purpose="change_phone",
+        expires_at=expires_at,
+        temp_user_data=json.dumps(temp_data)
+    )
+    
+    # TODO: Send OTP to new phone number
+    
+    return {
+        "otp_session_id": otp_session.id,
+        "phone": new_phone,
+        "expires_at": otp_session.expires_at.isoformat(),
+        "message": "OTP sent to new phone number. Please verify within 10 minutes.",
+        "otp": otp  # Remove in production
+    }
+
+
+def change_phone_verify(db: Session, otp_session_id: int, entered_otp: str):
+    """
+    Step 2: Verify OTP and complete phone change
+    """
+    from repositories.user_repository import get_user_by_id
+    
+    # Get OTP session
+    otp_session = get_otp_session_by_id(db, otp_session_id)
+    if not otp_session:
+        raise HTTPException(
+            status_code=404,
+            detail="OTP session not found"
+        )
+    
+    # Check if OTP is expired
+    if is_otp_expired(otp_session.expires_at):
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired. Please request a new one."
+        )
+    
+    # Check max attempts
+    if otp_session.attempts >= 5:
+        delete_otp_session(db, otp_session_id)
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum OTP attempts exceeded. Please request a new OTP."
+        )
+    
+    # Increment attempts
+    increment_attempts(db, otp_session_id)
+    
+    # Verify OTP
+    is_development = True  # Set to False in production
+    if not verify_otp(entered_otp, otp_session.otp, is_development=is_development):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP. Please try again."
+        )
+    
+    # Parse temporary data
+    temp_data = json.loads(otp_session.temp_user_data)
+    user_id = temp_data["user_id"]
+    new_phone = temp_data["new_phone"]
+    
+    # Get user
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    
+    # Update phone
+    updated_user = update_user(db, user, {"phone": new_phone})
+    
+    # Mark OTP session as verified
+    update_otp_session(db, otp_session_id, is_verified=True)
+    
+    return {
+        "id": updated_user.id,
+        "first_name": updated_user.first_name,
+        "last_name": updated_user.last_name,
+        "email": updated_user.email,
+        "phone": updated_user.phone,
+        "is_phone_verified": updated_user.is_phone_verified,
+        "city": {
+            "id": updated_user.city.id,
+            "name": updated_user.city.name,
+            "state": {
+                "id": updated_user.city.state.id,
+                "name": updated_user.city.state.name
+            }
+        } if updated_user.city else None,
+        "referral_code": updated_user.referral_code,
+        "message": "Phone number updated successfully"
+    }
