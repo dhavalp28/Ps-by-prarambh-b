@@ -1,26 +1,39 @@
-from fastapi import APIRouter, Depends, status, Query
-from sqlalchemy.orm import Session
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from routers.deps import get_db, get_current_user, get_admin_user
+from core.rbac import ROLE_ADMIN
+from fastapi import APIRouter, Depends, Query, status
+from routers.deps import get_admin_user, get_current_user, get_db
+from schemas.business_code import (
+    BusinessCodeValidateRequest,
+    BusinessCodeValidateResponse,
+)
 from schemas.redemption_history import (
+    RedemptionAnalyticsResponse,
     RedemptionHistoryResponse,
     RedemptionSummaryResponse,
-    RedemptionAnalyticsResponse,
 )
-from schemas.business_code import BusinessCodeValidateRequest, BusinessCodeValidateResponse
-from services import redemption_service, business_code_service
+from services import business_code_service, redemption_service
+from sqlalchemy.orm import Session
 from utils.response import (
-    success_list, success_create, success_update, success_delete,
-    error_not_found, error_duplicate, error_server
+    error_duplicate,
+    error_not_found,
+    error_server,
+    success_create,
+    success_delete,
+    success_list,
+    success_update,
 )
 
 router = APIRouter()
 
 
 @router.post("/redeem")
-def redeem_coupon(payload: BusinessCodeValidateRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def redeem_coupon(
+    payload: BusinessCodeValidateRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Redeem a coupon using business code (Authenticated users only)
     """
@@ -32,7 +45,9 @@ def redeem_coupon(payload: BusinessCodeValidateRequest, current_user = Depends(g
 
 
 @router.post("/validate-code")
-def validate_business_code(payload: BusinessCodeValidateRequest, db: Session = Depends(get_db)):
+def validate_business_code(
+    payload: BusinessCodeValidateRequest, db: Session = Depends(get_db)
+):
     """
     Validate a business code (Public endpoint)
     """
@@ -44,7 +59,9 @@ def validate_business_code(payload: BusinessCodeValidateRequest, db: Session = D
 
 
 @router.get("/summary")
-def get_redemption_summary(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_redemption_summary(
+    current_user=Depends(get_current_user), db: Session = Depends(get_db)
+):
     """
     Get user redemption summary (Authenticated users only)
     """
@@ -64,23 +81,28 @@ def get_redemption_history(
     status: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
     Get redemption history with filters and pagination (Authenticated users only)
-    
+
     Admin users can filter by any user_id, regular users can only see their own history
     """
     try:
+        user_role = (getattr(current_user, "role", None) or "user").lower()
+
         # If not admin, only allow viewing own history
-        if current_user.id != 1 and user_id and user_id != current_user.id:
-            return error_server(title="Get Redemption History", error="You can only view your own redemption history")
-        
+        if user_role != ROLE_ADMIN and user_id and user_id != current_user.id:
+            return error_server(
+                title="Get Redemption History",
+                error="You can only view your own redemption history",
+            )
+
         # If not admin and no user_id specified, default to current user
-        if current_user.id != 1 and not user_id:
+        if user_role != ROLE_ADMIN and not user_id:
             user_id = current_user.id
-        
+
         redemptions, total = redemption_service.get_redemptions_with_filters(
             db,
             skip=skip,
@@ -91,14 +113,14 @@ def get_redemption_history(
             start_date=start_date,
             end_date=end_date,
         )
-        
+
         data = {
             "items": [RedemptionHistoryResponse.model_validate(r) for r in redemptions],
             "total": total,
             "skip": skip,
             "limit": limit,
         }
-        
+
         return success_list(title="Redemption History", data=data)
     except Exception as e:
         return error_server(title="Get Redemption History", error=str(e))

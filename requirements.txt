@@ -11,3 +11,4 @@ pydantic[email]
 email-validator
 qrcode[pil]
 pillow
+razorpay

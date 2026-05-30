@@ -6,7 +6,7 @@ Use this after switching DATABASE_URL to Neon (or any Postgres).
 What it does:
   1. Creates ALL tables from SQLAlchemy models under db/models/
      (states, cities, categories, sub_categories, banners, users, vendors,
-     businesses, admin_audit_logs, … — exact match to ORM definitions).
+     businesses, admin_audit_logs, payment_orders, user_subscriptions, redemption_history, … — exact match to ORM definitions).
   2. Applies legacy tweaks on `users` if you upgraded from an old schema:
      adds state_id / city_id / role if missing, drops old VARCHAR state/city columns
      when present, and backfills a default admin user role.
