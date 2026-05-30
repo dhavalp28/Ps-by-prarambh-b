@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
 from typing import List
 
-from routers.deps import get_db, get_current_user, get_admin_user
+from fastapi import APIRouter, Depends, Request, status
+from routers.deps import get_admin_user, get_current_user, get_db
 from schemas.user import UserResponse, UserUpdate
 from services import user_service
+from services.audit_log_service import log_admin_action
+from sqlalchemy.orm import Session
 from utils.response import (
-    success_list, success_update, success_delete,
-    error_not_found, error_server
+    error_not_found,
+    error_server,
+    success_delete,
+    success_list,
+    success_update,
 )
 
 router = APIRouter()
@@ -20,7 +24,9 @@ def list_users(db: Session = Depends(get_db)):
     """
     try:
         users = user_service.get_all_users(db)
-        return success_list(title="Users List", data=[UserResponse.model_validate(u) for u in users])
+        return success_list(
+            title="Users List", data=[UserResponse.model_validate(u) for u in users]
+        )
     except Exception as e:
         return error_server(title="Users List", error=str(e))
 
@@ -34,13 +40,21 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
         user = user_service.get_user(db, user_id)
         if not user:
             return error_not_found(title="Get User", resource="User")
-        return success_list(title="User Details", data=UserResponse.model_validate(user))
+        return success_list(
+            title="User Details", data=UserResponse.model_validate(user)
+        )
     except Exception as e:
         return error_server(title="Get User", error=str(e))
 
 
 @router.put("/{user_id}", dependencies=[Depends(get_admin_user)])
-def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    payload: UserUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin_user=Depends(get_admin_user),
+):
     """
     Update user (Admin only)
     """
@@ -48,13 +62,32 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
         user = user_service.update_user(db, user_id, payload)
         if not user:
             return error_not_found(title="Update User", resource="User")
-        return success_update(title="User Updated", data=UserResponse.model_validate(user))
+        log_admin_action(
+            db,
+            admin_user_id=admin_user.id,
+            action="update",
+            resource_type="user",
+            resource_id=user.id,
+            method=request.method,
+            path=str(request.url.path),
+            details={
+                "updated_fields": list(payload.model_dump(exclude_unset=True).keys())
+            },
+        )
+        return success_update(
+            title="User Updated", data=UserResponse.model_validate(user)
+        )
     except Exception as e:
         return error_server(title="Update User", error=str(e))
 
 
 @router.delete("/{user_id}", dependencies=[Depends(get_admin_user)])
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin_user=Depends(get_admin_user),
+):
     """
     Delete user (Admin only)
     """
@@ -62,6 +95,16 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         user = user_service.delete_user(db, user_id)
         if not user:
             return error_not_found(title="Delete User", resource="User")
+        log_admin_action(
+            db,
+            admin_user_id=admin_user.id,
+            action="delete",
+            resource_type="user",
+            resource_id=user.id,
+            method=request.method,
+            path=str(request.url.path),
+            details={"email": user.email},
+        )
         return success_delete(title="User Deleted", resource_id=user.id)
     except Exception as e:
         return error_server(title="Delete User", error=str(e))

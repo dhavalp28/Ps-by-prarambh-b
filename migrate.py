@@ -6,10 +6,10 @@ Use this after switching DATABASE_URL to Neon (or any Postgres).
 What it does:
   1. Creates ALL tables from SQLAlchemy models under db/models/
      (states, cities, categories, sub_categories, banners, users, vendors,
-     businesses, … — exact match to ORM definitions).
+     businesses, admin_audit_logs, … — exact match to ORM definitions).
   2. Applies legacy tweaks on `users` if you upgraded from an old schema:
-     adds state_id / city_id if missing, drops old VARCHAR state/city columns
-     when present.
+     adds state_id / city_id / role if missing, drops old VARCHAR state/city columns
+     when present, and backfills a default admin user role.
 
 Prerequisites:
   - python-dotenv, sqlalchemy, psycopg2-binary (see requirements.txt)
@@ -42,9 +42,8 @@ def ensure_database_url() -> str:
 
 def create_all_tables(engine) -> None:
     """Register every model against Base.metadata and CREATE TABLE IF missing."""
-    from db.base import Base
-
     import db.models.init  # noqa: F401 — loads all mapped classes onto Base
+    from db.base import Base
 
     print("Creating any missing tables from SQLAlchemy models…")
     Base.metadata.create_all(bind=engine)
@@ -57,7 +56,9 @@ def migrate_legacy_users(engine) -> None:
     schema = "public"
 
     if not insp.has_table("users", schema=schema):
-        print("– users table missing (unexpected after create_all); skipping legacy tweaks")
+        print(
+            "– users table missing (unexpected after create_all); skipping legacy tweaks"
+        )
         return
 
     cols = {c["name"] for c in insp.get_columns("users", schema=schema)}
@@ -72,6 +73,10 @@ def migrate_legacy_users(engine) -> None:
     if "city_id" not in cols:
         stmts.append(
             "ALTER TABLE public.users ADD COLUMN city_id INTEGER REFERENCES public.cities(id);"
+        )
+    if "role" not in cols:
+        stmts.append(
+            "ALTER TABLE public.users ADD COLUMN role VARCHAR NOT NULL DEFAULT 'user';"
         )
 
     drops = []
@@ -98,6 +103,16 @@ def migrate_legacy_users(engine) -> None:
             print(
                 "✓ Dropped legacy VARCHAR state/city on users (if they still existed)."
             )
+
+        conn.execute(
+            text(
+                "UPDATE public.users SET role = 'user' WHERE role IS NULL OR role = ''"
+            )
+        )
+        conn.execute(text("UPDATE public.users SET role = 'admin' WHERE id = 1"))
+        print(
+            "✓ Backfilled user roles and promoted user id=1 to admin for compatibility."
+        )
 
 
 def main() -> None:

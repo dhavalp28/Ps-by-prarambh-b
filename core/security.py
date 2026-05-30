@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
 
 import bcrypt
-from jose import jwt
-
 from core.config import settings
+from jose import jwt
 
 
 def hash_password(password: str) -> str:
@@ -27,16 +26,12 @@ def verify_password(plain_password: str, hashed_password: str | None) -> bool:
 def create_access_token(data: dict):
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
 
     encoded_jwt = jwt.encode(
-        to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
 
     return encoded_jwt
@@ -48,9 +43,7 @@ def decode_access_token(token: str):
     """
     try:
         payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
     except jwt.ExpiredSignatureError:

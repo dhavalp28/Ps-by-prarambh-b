@@ -1,12 +1,12 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
+from pydantic import BaseModel, ConfigDict, EmailStr
 from schemas.city import CityResponse
 
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
     first_name: str
     last_name: str
@@ -17,6 +17,7 @@ class UserResponse(BaseModel):
     city: Optional[CityResponse]
 
     referral_code: Optional[str]
+    role: str
 
 
 class UserUpdate(BaseModel):

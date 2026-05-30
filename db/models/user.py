@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from sqlalchemy.orm import relationship
-
 from db.base import Base
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 
 
 class User(Base):
@@ -21,7 +20,8 @@ class User(Base):
     referral_code = Column(String, nullable=True)
 
     hashed_password = Column(String, nullable=True)  # Can be null for OTP-only login
-    
+    role = Column(String, nullable=False, default="user", server_default="user")
+
     is_phone_verified = Column(Boolean, default=False)
 
     # Relationships
