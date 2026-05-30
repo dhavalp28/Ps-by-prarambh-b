@@ -15,6 +15,7 @@ from routers.routes import (
     user,
     user_subscription,
     vendor,
+    vendor_dashboard,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -23,6 +24,9 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 api_router.include_router(profile.router, prefix="/auth", tags=["Profile"])
 api_router.include_router(user.router, prefix="/users", tags=["User"])
 api_router.include_router(vendor.router, prefix="/vendors", tags=["Vendor"])
+api_router.include_router(
+    vendor_dashboard.router, prefix="/vendor-dashboard", tags=["Vendor Dashboard"]
+)
 api_router.include_router(business.router, prefix="/businesses", tags=["Business"])
 api_router.include_router(state.router, prefix="/states", tags=["State"])
 api_router.include_router(city.router, prefix="/cities", tags=["City"])

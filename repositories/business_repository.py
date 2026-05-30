@@ -1,7 +1,8 @@
-from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 
 from db.models.business import Business
+from db.models.business_code import BusinessCode
+from sqlalchemy.orm import Session, joinedload
 
 
 def get_all_businesses(db: Session, city_id: Optional[int] = None):
@@ -9,7 +10,7 @@ def get_all_businesses(db: Session, city_id: Optional[int] = None):
         joinedload(Business.state),
         joinedload(Business.city),
         joinedload(Business.category),
-        joinedload(Business.sub_category)
+        joinedload(Business.sub_category),
     )
     if city_id:
         query = query.filter(Business.city_id == city_id)
@@ -17,12 +18,35 @@ def get_all_businesses(db: Session, city_id: Optional[int] = None):
 
 
 def get_business_by_id(db: Session, business_id: int):
-    return db.query(Business).options(
-        joinedload(Business.state),
-        joinedload(Business.city),
-        joinedload(Business.category),
-        joinedload(Business.sub_category)
-    ).filter(Business.id == business_id).first()
+    return (
+        db.query(Business)
+        .options(
+            joinedload(Business.state),
+            joinedload(Business.city),
+            joinedload(Business.category),
+            joinedload(Business.sub_category),
+            joinedload(Business.owner),
+        )
+        .filter(Business.id == business_id)
+        .first()
+    )
+
+
+def get_businesses_by_owner_id(db: Session, owner_id: int):
+    return (
+        db.query(Business)
+        .options(
+            joinedload(Business.state),
+            joinedload(Business.city),
+            joinedload(Business.category),
+            joinedload(Business.sub_category),
+            joinedload(Business.owner),
+            joinedload(Business.business_code),
+        )
+        .filter(Business.owner_id == owner_id)
+        .order_by(Business.created_at.desc())
+        .all()
+    )
 
 
 def create_business(db: Session, data: dict):

@@ -1,9 +1,10 @@
-from core.rbac import ROLE_ADMIN, ROLE_USER
+from core.rbac import ROLE_ADMIN, ROLE_USER, ROLE_VENDOR
 from core.security import decode_access_token
 from db.session import SessionLocal
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from repositories.user_repository import get_user_by_id
+from repositories.vendor_repository import get_vendor_by_id
 
 security = HTTPBearer()
 
@@ -63,3 +64,38 @@ def get_admin_user(current_user=Depends(get_current_user)):
             detail="Admin access required",
         )
     return current_user
+
+
+def get_current_vendor(
+    credentials: HTTPAuthorizationCredentials = Depends(security), db=Depends(get_db)
+):
+    token = credentials.credentials
+
+    try:
+        payload = decode_access_token(token)
+        vendor_id = payload.get("sub")
+        role = (payload.get("role") or "").lower()
+        entity_type = (payload.get("entity_type") or "").lower()
+
+        if vendor_id is None or role != ROLE_VENDOR or entity_type != "vendor":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid vendor authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid vendor authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    vendor = get_vendor_by_id(db, int(vendor_id))
+    if vendor is None or not vendor.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Vendor not found or inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return vendor

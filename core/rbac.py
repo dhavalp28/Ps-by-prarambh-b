@@ -2,6 +2,7 @@ from typing import Iterable
 
 ROLE_ADMIN = "admin"
 ROLE_USER = "user"
+ROLE_VENDOR = "vendor"
 
 
 def has_role(user, roles: Iterable[str]) -> bool:

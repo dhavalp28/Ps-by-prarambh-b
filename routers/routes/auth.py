@@ -8,6 +8,7 @@ from schemas.auth import (
     RegisterVerifySchema,
     ResendOtpSchema,
 )
+from schemas.vendor_auth import VendorLoginSchema
 from services.admin_auth_service import admin_login, bootstrap_admin
 from services.otp_auth_service import (
     login_send_otp,
@@ -17,6 +18,7 @@ from services.otp_auth_service import (
     resend_otp,
     update_phone_during_registration,
 )
+from services.vendor_auth_service import vendor_login
 from sqlalchemy.orm import Session
 from utils.response import error_server, error_validation, success_create
 
@@ -56,6 +58,21 @@ def admin_login_endpoint(payload: AdminLoginSchema, db: Session = Depends(get_db
         if hasattr(e, "status_code"):
             return error_validation(title="Admin Login", error=str(e.detail))
         return error_server(title="Admin Login", error=str(e))
+
+
+@router.post("/vendor/login")
+def vendor_login_endpoint(payload: VendorLoginSchema, db: Session = Depends(get_db)):
+    try:
+        result = vendor_login(db, payload.email, payload.password)
+        return success_create(
+            title="Vendor Login Successful",
+            data=result,
+            message="Vendor login successful",
+        )
+    except Exception as e:
+        if hasattr(e, "status_code"):
+            return error_validation(title="Vendor Login", error=str(e.detail))
+        return error_server(title="Vendor Login", error=str(e))
 
 
 # ============ OTP-Based Authentication (Production Flow) ============
