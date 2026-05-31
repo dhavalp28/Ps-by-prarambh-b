@@ -1,12 +1,15 @@
-from pydantic import BaseModel, EmailStr
+from datetime import datetime
 from typing import Optional
-from schemas.city import CityResponse
 
+from pydantic import BaseModel, EmailStr
+from schemas.city import CityResponse
 
 # ============ Registration Flow ============
 
+
 class RegisterInitSchema(BaseModel):
     """Initial registration request - send OTP"""
+
     first_name: str
     last_name: str
     email: EmailStr
@@ -16,36 +19,50 @@ class RegisterInitSchema(BaseModel):
     referral_code: Optional[str] = None
 
 
-class RegisterVerifySchema(BaseModel):
+class DeviceInfoSchema(BaseModel):
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
+    device_platform: Optional[str] = None
+
+
+class RegisterVerifySchema(DeviceInfoSchema):
     """Verify OTP and complete registration"""
+
     otp_session_id: int
     otp: str
 
 
 # ============ Login Flow ============
 
+
 class LoginSendOtpSchema(BaseModel):
     """Send OTP for login"""
+
     phone: str
 
 
-class LoginVerifySchema(BaseModel):
+class LoginVerifySchema(DeviceInfoSchema):
     """Verify OTP for login"""
+
     otp_session_id: int
     otp: str
 
 
 # ============ Resend OTP ============
 
+
 class ResendOtpSchema(BaseModel):
     """Resend OTP"""
+
     otp_session_id: int
 
 
 # ============ Profile Management ============
 
+
 class ProfileUpdateSchema(BaseModel):
     """Update user profile"""
+
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -55,31 +72,36 @@ class ProfileUpdateSchema(BaseModel):
 
 class ChangePhoneInitSchema(BaseModel):
     """Initiate phone change - send OTP to new phone"""
+
     new_phone: str
 
 
 class ChangePhoneVerifySchema(BaseModel):
     """Verify OTP and complete phone change"""
+
     otp_session_id: int
     otp: str
 
 
 # ============ Response Schemas ============
 
+
 class OtpSessionResponse(BaseModel):
     """OTP Session response"""
+
     id: int
     phone: str
     purpose: str
     expires_at: str
     attempts: int
-    
+
     class Config:
         from_attributes = True
 
 
 class UserResponse(BaseModel):
     """User response"""
+
     id: int
     first_name: str
     last_name: str
@@ -87,19 +109,33 @@ class UserResponse(BaseModel):
     phone: str
     is_phone_verified: bool
     city: Optional[CityResponse] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class AuthTokenResponse(BaseModel):
     """Authentication token response"""
+
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+    access_expires_at: datetime
+    refresh_expires_at: Optional[datetime] = None
+    session_id: int
     user: UserResponse
 
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
+
 # ============ Legacy Schemas (kept for backward compatibility) ============
+
 
 class RegisterSchema(BaseModel):
     first_name: str

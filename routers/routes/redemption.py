@@ -2,50 +2,46 @@ from datetime import datetime
 from typing import Optional
 
 from core.rbac import ROLE_ADMIN
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 from routers.deps import get_admin_user, get_current_user, get_db
-from schemas.business_code import (
-    BusinessCodeValidateRequest,
-    BusinessCodeValidateResponse,
-)
+from schemas.business_code import BusinessCodeValidateRequest
 from schemas.redemption_history import (
-    RedemptionAnalyticsResponse,
+    CouponClaimRequest,
+    CouponClaimResponse,
     RedemptionHistoryResponse,
-    RedemptionSummaryResponse,
 )
 from services import business_code_service, redemption_service
 from sqlalchemy.orm import Session
-from utils.response import (
-    error_duplicate,
-    error_not_found,
-    error_server,
-    success_create,
-    success_delete,
-    success_list,
-    success_update,
-)
+from utils.response import error_server, success_create, success_list
 
 router = APIRouter()
 
 
-@router.post("/redeem")
-def redeem_coupon(
-    payload: BusinessCodeValidateRequest,
+@router.post("/claim")
+def claim_coupon(
+    payload: CouponClaimRequest,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Redeem a coupon using business code (Authenticated users only)
+    Claim a coupon only after QR verification using business_id + coupon_id + scanned business code.
+    The coupon_id is stored as the claim reference in redemption history.
     """
     try:
-        result = redemption_service.redeem_coupon(
-            db, current_user.id, payload.code, payload.coupon_id
+        result = redemption_service.claim_coupon(
+            db,
+            user_id=current_user.id,
+            business_id=payload.business_id,
+            coupon_id=payload.coupon_id,
+            business_code=payload.code,
         )
-        return success_create(title="Coupon Redeemed", data=result)
+        return success_create(
+            title="Coupon Claimed",
+            data=CouponClaimResponse(**result),
+        )
     except Exception as e:
-        if hasattr(e, "detail"):
-            return error_server(title="Redeem Coupon", error=str(e.detail))
-        return error_server(title="Redeem Coupon", error=str(e))
+        error_detail = getattr(e, "detail", e)
+        return error_server(title="Coupon Claim", error=str(error_detail))
 
 
 @router.post("/validate-code")

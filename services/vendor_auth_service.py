@@ -1,40 +1,36 @@
 from core.rbac import ROLE_VENDOR
-from core.security import create_access_token, verify_password
-from fastapi import HTTPException, status
-from repositories.vendor_repository import get_vendor_by_email
+from core.security import verify_password
+from fastapi import HTTPException, Request, status
+from repositories.vendor_repository import get_vendor_by_email_case_insensitive
+from services.session_auth_service import issue_session_tokens
 from sqlalchemy.orm import Session
 
 
-def vendor_login(db: Session, email: str, password: str):
-    vendor = get_vendor_by_email(db, email)
+def vendor_login(db: Session, email: str, password: str, payload, request: Request):
+    vendor = get_vendor_by_email_case_insensitive(db, email)
 
-    if not vendor or not verify_password(password, vendor.hashed_password):
+    if not vendor or not verify_password(
+        password, getattr(vendor, "hashed_password", None)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
 
-    if not vendor.is_active:
+    if not bool(getattr(vendor, "is_active", False)):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Vendor account is inactive",
         )
 
-    token = create_access_token(
-        {"sub": str(vendor.id), "role": ROLE_VENDOR, "entity_type": "vendor"}
+    return issue_session_tokens(
+        db,
+        entity=vendor,
+        role=ROLE_VENDOR,
+        entity_type="vendor",
+        session_type="web",
+        request=request,
+        device_id=getattr(payload, "device_id", None),
+        device_name=getattr(payload, "device_name", None),
+        device_platform=getattr(payload, "device_platform", None),
     )
-
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id": vendor.id,
-            "name": vendor.name,
-            "email": vendor.email,
-            "phone": vendor.phone,
-            "role": ROLE_VENDOR,
-            "entity_type": "vendor",
-            "city_id": vendor.city_id,
-            "state_id": vendor.state_id,
-        },
-    }

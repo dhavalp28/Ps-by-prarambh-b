@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
 
     referral_code: Optional[str]
     role: str
+    is_active: bool
 
 
 class UserUpdate(BaseModel):
@@ -27,3 +28,4 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     state_id: Optional[int] = None
     city_id: Optional[int] = None
+    is_active: Optional[bool] = None

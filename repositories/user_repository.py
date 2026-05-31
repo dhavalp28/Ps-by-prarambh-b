@@ -42,6 +42,15 @@ def get_admin_user_count(db: Session) -> int:
     return db.query(User).filter(User.role.ilike("admin")).count()
 
 
+def get_user_by_id_active(db: Session, user_id: int):
+    return (
+        db.query(User)
+        .options(joinedload(User.state), joinedload(User.city))
+        .filter(User.id == user_id, User.is_active == True)
+        .first()
+    )
+
+
 def get_all_users(db: Session):
     return db.query(User).options(joinedload(User.state), joinedload(User.city)).all()
 

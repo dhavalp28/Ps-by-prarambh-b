@@ -1,8 +1,13 @@
+import hashlib
+import secrets
 from datetime import datetime, timedelta
 
 import bcrypt
 from core.config import settings
-from jose import jwt
+from jose import ExpiredSignatureError, JWTError, jwt
+
+ACCESS_TOKEN_TYPE = "access"
+REFRESH_TOKEN_TYPE = "refresh"
 
 
 def hash_password(password: str) -> str:
@@ -23,32 +28,64 @@ def verify_password(plain_password: str, hashed_password: str | None) -> bool:
         return False
 
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode.update({"exp": expire})
+def generate_session_key() -> str:
+    return secrets.token_urlsafe(32)
 
-    encoded_jwt = jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+
+def _get_secret_key() -> str:
+    secret_key = settings.SECRET_KEY
+    if not secret_key:
+        raise ValueError("SECRET_KEY is not configured")
+    return secret_key
+
+
+def _encode_token(data: dict, expires_delta: timedelta, token_type: str):
+    now = datetime.utcnow()
+    payload = data.copy()
+    payload.update(
+        {
+            "typ": token_type,
+            "iat": now,
+            "exp": now + expires_delta,
+        }
+    )
+    return jwt.encode(payload, _get_secret_key(), algorithm=settings.ALGORITHM)
+
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    return _encode_token(
+        data,
+        expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        ACCESS_TOKEN_TYPE,
     )
 
-    return encoded_jwt
+
+def create_refresh_token(data: dict, expires_delta: timedelta):
+    return _encode_token(data, expires_delta, REFRESH_TOKEN_TYPE)
+
+
+def decode_token(token: str):
+    try:
+        return jwt.decode(token, _get_secret_key(), algorithms=[settings.ALGORITHM])
+    except ExpiredSignatureError:
+        raise ValueError("Token has expired")
+    except JWTError:
+        raise ValueError("Invalid token")
 
 
 def decode_access_token(token: str):
-    """
-    Decode and validate JWT token
-    """
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise ValueError("Token has expired")
-    except jwt.JWTClaimsError:
-        raise ValueError("Invalid token claims")
-    except jwt.JWTError:
-        raise ValueError("Invalid token")
+    payload = decode_token(token)
+    if payload.get("typ") not in (None, ACCESS_TOKEN_TYPE):
+        raise ValueError("Invalid token type")
+    return payload
+
+
+def decode_refresh_token(token: str):
+    payload = decode_token(token)
+    if payload.get("typ") != REFRESH_TOKEN_TYPE:
+        raise ValueError("Invalid token type")
+    return payload

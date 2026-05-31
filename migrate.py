@@ -192,6 +192,191 @@ def migrate_legacy_users(engine) -> None:
         )
 
 
+def migrate_coupon_claim_history_module(engine) -> None:
+    """Add coupon claim history fields and subscription usage counters."""
+    insp = inspect(engine)
+    schema = "public"
+
+    if insp.has_table("redemption_history", schema=schema):
+        redemption_cols = {
+            c["name"] for c in insp.get_columns("redemption_history", schema=schema)
+        }
+        with engine.begin() as conn:
+            added_redemption_columns = False
+            if "coupon_id" not in redemption_cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE public.redemption_history ADD COLUMN coupon_id INTEGER REFERENCES public.coupons(id);"
+                    )
+                )
+                added_redemption_columns = True
+            if "claim_reference" not in redemption_cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE public.redemption_history ADD COLUMN claim_reference INTEGER;"
+                    )
+                )
+                added_redemption_columns = True
+
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_redemption_history_coupon_id ON public.redemption_history (coupon_id);"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_redemption_history_claim_reference ON public.redemption_history (claim_reference);"
+                )
+            )
+
+            if added_redemption_columns:
+                print("✓ Added coupon claim fields to redemption_history.")
+            else:
+                print("– Coupon claim fields already present on redemption_history.")
+    else:
+        print(
+            "– redemption_history table missing; skipping coupon claim field migration"
+        )
+
+    if insp.has_table("user_subscriptions", schema=schema):
+        subscription_cols = {
+            c["name"] for c in insp.get_columns("user_subscriptions", schema=schema)
+        }
+        with engine.begin() as conn:
+            added_subscription_columns = False
+            if "daily_redemption_count" not in subscription_cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE public.user_subscriptions ADD COLUMN daily_redemption_count INTEGER NOT NULL DEFAULT 0;"
+                    )
+                )
+                added_subscription_columns = True
+            if "total_redemption_count" not in subscription_cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE public.user_subscriptions ADD COLUMN total_redemption_count INTEGER NOT NULL DEFAULT 0;"
+                    )
+                )
+                added_subscription_columns = True
+            if "last_redeemed_on" not in subscription_cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE public.user_subscriptions ADD COLUMN last_redeemed_on DATE;"
+                    )
+                )
+                added_subscription_columns = True
+
+            conn.execute(
+                text(
+                    """
+                    UPDATE public.user_subscriptions us
+                    SET total_redemption_count = COALESCE(stats.total_count, 0),
+                        daily_redemption_count = CASE
+                            WHEN stats.last_redeemed_on = CURRENT_DATE THEN COALESCE(stats.today_count, 0)
+                            ELSE 0
+                        END,
+                        last_redeemed_on = stats.last_redeemed_on
+                    FROM (
+                        SELECT
+                            rh.user_subscription_id,
+                            COUNT(*) FILTER (WHERE rh.status = 'success')::INTEGER AS total_count,
+                            COUNT(*) FILTER (
+                                WHERE rh.status = 'success'
+                                  AND DATE(rh.redeemed_at) = CURRENT_DATE
+                            )::INTEGER AS today_count,
+                            MAX(DATE(rh.redeemed_at)) FILTER (WHERE rh.status = 'success') AS last_redeemed_on
+                        FROM public.redemption_history rh
+                        GROUP BY rh.user_subscription_id
+                    ) AS stats
+                    WHERE us.id = stats.user_subscription_id;
+                    """
+                )
+            )
+
+            if added_subscription_columns:
+                print("✓ Added usage counters to user_subscriptions.")
+            else:
+                print("– Usage counters already present on user_subscriptions.")
+    else:
+        print("– user_subscriptions table missing; skipping usage counter migration")
+
+
+def migrate_auth_session_module(engine) -> None:
+    """Add auth session support and user active flag for session revocation."""
+    insp = inspect(engine)
+    schema = "public"
+
+    if insp.has_table("users", schema=schema):
+        user_cols = {c["name"] for c in insp.get_columns("users", schema=schema)}
+        with engine.begin() as conn:
+            if "is_active" not in user_cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE public.users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;"
+                    )
+                )
+                print("✓ Added is_active column to users.")
+            else:
+                print("– is_active column already present on users.")
+    else:
+        print("– users table missing; skipping auth user flag migration")
+
+    if insp.has_table("auth_sessions", schema=schema):
+        print("– auth_sessions table already present.")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS public.auth_sessions (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER REFERENCES public.users(id),
+                    vendor_id INTEGER REFERENCES public.vendors(id),
+                    role VARCHAR NOT NULL,
+                    entity_type VARCHAR NOT NULL,
+                    session_type VARCHAR NOT NULL,
+                    session_key VARCHAR NOT NULL UNIQUE,
+                    refresh_token_hash VARCHAR NULL,
+                    device_id VARCHAR NULL,
+                    device_name VARCHAR NULL,
+                    device_platform VARCHAR NULL,
+                    user_agent TEXT NULL,
+                    ip_address VARCHAR NULL,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    last_seen_at TIMESTAMPTZ DEFAULT NOW(),
+                    access_expires_at TIMESTAMPTZ NULL,
+                    refresh_expires_at TIMESTAMPTZ NULL,
+                    revoked_at TIMESTAMPTZ NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                """
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_auth_sessions_user_id ON public.auth_sessions (user_id);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_auth_sessions_vendor_id ON public.auth_sessions (vendor_id);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_auth_sessions_device_id ON public.auth_sessions (device_id);"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_auth_sessions_session_key ON public.auth_sessions (session_key);"
+            )
+        )
+        print("✓ Added auth_sessions table and indexes.")
+
+
 def main() -> None:
     DATABASE_URL = ensure_database_url()
 
@@ -223,6 +408,8 @@ def main() -> None:
     migrate_brand_support(engine)
     migrate_business_module_extensions(engine)
     migrate_legacy_users(engine)
+    migrate_coupon_claim_history_module(engine)
+    migrate_auth_session_module(engine)
 
     print("\n=== Done ===")
     print(

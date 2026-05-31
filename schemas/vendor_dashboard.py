@@ -43,6 +43,9 @@ class VendorRedemptionHistoryItem(BaseModel):
     user_id: int
     user_name: str
     user_phone: str
+    coupon_id: Optional[int] = None
+    coupon_name: Optional[str] = None
+    claim_reference: Optional[int] = None
     status: str
     remaining_daily_limit: int
     remaining_total_limit: int

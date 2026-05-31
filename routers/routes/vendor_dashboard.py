@@ -83,6 +83,9 @@ def get_redemptions(
                         else "—"
                     ),
                     user_phone=r.user.phone if r.user else "—",
+                    coupon_id=r.coupon_id,
+                    coupon_name=(r.coupon.coupon_name if r.coupon else None),
+                    claim_reference=r.claim_reference,
                     status=r.status,
                     remaining_daily_limit=r.remaining_daily_limit,
                     remaining_total_limit=r.remaining_total_limit,

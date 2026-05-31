@@ -5,7 +5,6 @@ from repositories.user_subscription_repository import (
     create_user_subscription,
     deactivate_user_subscriptions,
     get_active_user_subscription,
-    get_user_subscription_by_id,
     get_user_subscriptions,
     update_user_subscription,
 )
@@ -27,10 +26,11 @@ def check_subscription_validity(db: Session, user_id: int):
     if not subscription:
         return False, "No active subscription"
 
-    if not subscription.is_active:
+    if not bool(getattr(subscription, "is_active", False)):
         return False, "Subscription is inactive"
 
-    if subscription.expires_at < datetime.utcnow():
+    expires_at = getattr(subscription, "expires_at", None)
+    if expires_at is None or expires_at < datetime.utcnow():
         # Mark as expired
         update_user_subscription(db, subscription, {"is_active": False})
         return False, "Subscription has expired"
@@ -45,15 +45,23 @@ def get_subscription_details(db: Session, user_id: int):
     if not subscription:
         return None
 
-    days_remaining = (subscription.expires_at - datetime.utcnow()).days
-    is_expired = subscription.expires_at < datetime.utcnow()
+    expires_at = getattr(subscription, "expires_at")
+    days_remaining = (expires_at - datetime.utcnow()).days
+    is_expired = expires_at < datetime.utcnow()
 
     return {
         "id": subscription.id,
         "user_id": subscription.user_id,
         "purchased_at": subscription.purchased_at,
-        "expires_at": subscription.expires_at,
-        "is_active": subscription.is_active,
+        "expires_at": expires_at,
+        "is_active": bool(getattr(subscription, "is_active", False)),
+        "daily_redemption_count": int(
+            getattr(subscription, "daily_redemption_count", 0) or 0
+        ),
+        "total_redemption_count": int(
+            getattr(subscription, "total_redemption_count", 0) or 0
+        ),
+        "last_redeemed_on": getattr(subscription, "last_redeemed_on", None),
         "subscription_plan": {
             "id": subscription.subscription_plan.id,
             "plan_name": subscription.subscription_plan.plan_name,

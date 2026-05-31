@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
+from schemas.auth import DeviceInfoSchema
 
 
-class VendorLoginSchema(BaseModel):
+class VendorLoginSchema(DeviceInfoSchema):
     email: EmailStr
     password: str

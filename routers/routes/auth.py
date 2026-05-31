@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends
-from routers.deps import get_db
+from fastapi import APIRouter, Depends, Request
+from routers.deps import get_current_auth_session, get_db
 from schemas.admin_auth import AdminBootstrapSchema, AdminLoginSchema
 from schemas.auth import (
     LoginSendOtpSchema,
     LoginVerifySchema,
+    LogoutRequest,
+    RefreshTokenRequest,
     RegisterInitSchema,
     RegisterVerifySchema,
     ResendOtpSchema,
@@ -18,9 +20,14 @@ from services.otp_auth_service import (
     resend_otp,
     update_phone_during_registration,
 )
+from services.session_auth_service import (
+    logout_all_sessions,
+    logout_session_by_key,
+    refresh_session_tokens,
+)
 from services.vendor_auth_service import vendor_login
 from sqlalchemy.orm import Session
-from utils.response import error_server, error_validation, success_create
+from utils.response import error_server, error_validation, success_create, success_list
 
 router = APIRouter()
 
@@ -30,10 +37,10 @@ router = APIRouter()
 
 @router.post("/admin/bootstrap")
 def admin_bootstrap_endpoint(
-    payload: AdminBootstrapSchema, db: Session = Depends(get_db)
+    payload: AdminBootstrapSchema, request: Request, db: Session = Depends(get_db)
 ):
     try:
-        result = bootstrap_admin(db, payload)
+        result = bootstrap_admin(db, payload, request)
         return success_create(
             title="Admin Bootstrap Successful",
             data=result,
@@ -41,14 +48,18 @@ def admin_bootstrap_endpoint(
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Admin Bootstrap", error=str(e.detail))
+            return error_validation(
+                title="Admin Bootstrap", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Admin Bootstrap", error=str(e))
 
 
 @router.post("/admin/login")
-def admin_login_endpoint(payload: AdminLoginSchema, db: Session = Depends(get_db)):
+def admin_login_endpoint(
+    payload: AdminLoginSchema, request: Request, db: Session = Depends(get_db)
+):
     try:
-        result = admin_login(db, payload.email, payload.password)
+        result = admin_login(db, payload.email, payload.password, payload, request)
         return success_create(
             title="Admin Login Successful",
             data=result,
@@ -56,14 +67,18 @@ def admin_login_endpoint(payload: AdminLoginSchema, db: Session = Depends(get_db
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Admin Login", error=str(e.detail))
+            return error_validation(
+                title="Admin Login", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Admin Login", error=str(e))
 
 
 @router.post("/vendor/login")
-def vendor_login_endpoint(payload: VendorLoginSchema, db: Session = Depends(get_db)):
+def vendor_login_endpoint(
+    payload: VendorLoginSchema, request: Request, db: Session = Depends(get_db)
+):
     try:
-        result = vendor_login(db, payload.email, payload.password)
+        result = vendor_login(db, payload.email, payload.password, payload, request)
         return success_create(
             title="Vendor Login Successful",
             data=result,
@@ -71,8 +86,74 @@ def vendor_login_endpoint(payload: VendorLoginSchema, db: Session = Depends(get_
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Vendor Login", error=str(e.detail))
+            return error_validation(
+                title="Vendor Login", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Vendor Login", error=str(e))
+
+
+@router.post("/refresh")
+def refresh_token_endpoint(
+    payload: RefreshTokenRequest, request: Request, db: Session = Depends(get_db)
+):
+    try:
+        result = refresh_session_tokens(
+            db,
+            refresh_token=payload.refresh_token,
+            request=request,
+        )
+        return success_create(
+            title="Token Refreshed",
+            data=result,
+            message="Session refreshed successfully",
+        )
+    except Exception as e:
+        if hasattr(e, "status_code"):
+            return error_validation(
+                title="Refresh Token", error=str(getattr(e, "detail", e))
+            )
+        return error_server(title="Refresh Token", error=str(e))
+
+
+@router.post("/logout")
+def logout_endpoint(
+    payload: LogoutRequest,
+    current_auth=Depends(get_current_auth_session),
+    db: Session = Depends(get_db),
+):
+    try:
+        session_key = current_auth["payload"].get("sid")
+        if session_key:
+            logout_session_by_key(db, session_key)
+        return success_list(
+            title="Logout Successful",
+            data={"success": True},
+            message="Session revoked successfully",
+        )
+    except Exception as e:
+        return error_server(title="Logout", error=str(e))
+
+
+@router.post("/logout-all")
+def logout_all_endpoint(
+    current_auth=Depends(get_current_auth_session),
+    db: Session = Depends(get_db),
+):
+    try:
+        payload = current_auth["payload"]
+        subject = payload.get("sub")
+        entity_type = (payload.get("entity_type") or "user").lower()
+        if subject is None:
+            return error_validation(title="Logout All", error="Invalid session")
+
+        logout_all_sessions(db, entity_type=entity_type, entity_id=int(subject))
+        return success_list(
+            title="Logout All Successful",
+            data={"success": True},
+            message="All active sessions revoked successfully",
+        )
+    except Exception as e:
+        return error_server(title="Logout All", error=str(e))
 
 
 # ============ OTP-Based Authentication (Production Flow) ============
@@ -96,31 +177,33 @@ def register_init_endpoint(payload: RegisterInitSchema, db: Session = Depends(ge
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Register Init", error=str(e.detail))
+            return error_validation(
+                title="Register Init", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Register Init", error=str(e))
 
 
 @router.post("/register/verify")
 def register_verify_endpoint(
-    payload: RegisterVerifySchema, db: Session = Depends(get_db)
+    payload: RegisterVerifySchema, request: Request, db: Session = Depends(get_db)
 ):
     """
     Step 2: Verify OTP and create user
     """
     try:
-        result = register_verify(db, payload.otp_session_id, payload.otp)
+        result = register_verify(
+            db, payload.otp_session_id, payload.otp, payload, request
+        )
         return success_create(
             title="Registration Successful",
-            data={
-                "access_token": result["access_token"],
-                "token_type": result["token_type"],
-                "user": result["user"],
-            },
+            data=result,
             message="User registered and verified successfully",
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Register Verify", error=str(e.detail))
+            return error_validation(
+                title="Register Verify", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Register Verify", error=str(e))
 
 
@@ -142,29 +225,31 @@ def login_send_otp_endpoint(payload: LoginSendOtpSchema, db: Session = Depends(g
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Login Send OTP", error=str(e.detail))
+            return error_validation(
+                title="Login Send OTP", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Login Send OTP", error=str(e))
 
 
 @router.post("/login/verify")
-def login_verify_endpoint(payload: LoginVerifySchema, db: Session = Depends(get_db)):
+def login_verify_endpoint(
+    payload: LoginVerifySchema, request: Request, db: Session = Depends(get_db)
+):
     """
     Step 2: Verify OTP and login user
     """
     try:
-        result = login_verify(db, payload.otp_session_id, payload.otp)
+        result = login_verify(db, payload.otp_session_id, payload.otp, payload, request)
         return success_create(
             title="Login Successful",
-            data={
-                "access_token": result["access_token"],
-                "token_type": result["token_type"],
-                "user": result["user"],
-            },
+            data=result,
             message="Login successful",
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Login Verify", error=str(e.detail))
+            return error_validation(
+                title="Login Verify", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Login Verify", error=str(e))
 
 
@@ -186,7 +271,9 @@ def resend_otp_endpoint(payload: ResendOtpSchema, db: Session = Depends(get_db))
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Resend OTP", error=str(e.detail))
+            return error_validation(
+                title="Resend OTP", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Resend OTP", error=str(e))
 
 
@@ -210,5 +297,7 @@ def update_phone_endpoint(
         )
     except Exception as e:
         if hasattr(e, "status_code"):
-            return error_validation(title="Update Phone", error=str(e.detail))
+            return error_validation(
+                title="Update Phone", error=str(getattr(e, "detail", e))
+            )
         return error_server(title="Update Phone", error=str(e))

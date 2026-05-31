@@ -23,6 +23,7 @@ class User(Base):
     role = Column(String, nullable=False, default="user", server_default="user")
 
     is_phone_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, nullable=False, default=True, server_default="true")
 
     # Relationships
     state = relationship("State")

@@ -1,14 +1,14 @@
 import hashlib
 import hmac
-import os
 
 import razorpay
+from core.config import settings
 
 
 class RazorpayClient:
     def __init__(self):
-        self.key_id = os.getenv("RAZORPAY_KEY_ID", "")
-        self.key_secret = os.getenv("RAZORPAY_KEY_SECRET", "")
+        self.key_id = settings.RAZORPAY_KEY_ID
+        self.key_secret = settings.RAZORPAY_KEY_SECRET
         self.client = razorpay.Client(auth=(self.key_id, self.key_secret))
 
     def is_configured(self) -> bool:

@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 
 from db.models.business import Business
 from db.models.redemption_history import RedemptionHistory
@@ -66,7 +66,11 @@ def get_redemption_history(
     end_date: Optional[datetime] = None,
 ):
     """Get redemption history with filters and pagination"""
-    query = db.query(RedemptionHistory)
+    query = db.query(RedemptionHistory).options(
+        joinedload(RedemptionHistory.user),
+        joinedload(RedemptionHistory.business),
+        joinedload(RedemptionHistory.coupon),
+    )
 
     if user_id:
         query = query.filter(RedemptionHistory.user_id == user_id)
@@ -145,6 +149,7 @@ def get_vendor_redemption_history(
         .options(
             joinedload(RedemptionHistory.user),
             joinedload(RedemptionHistory.business),
+            joinedload(RedemptionHistory.coupon),
         )
         .filter(Business.owner_id == owner_id)
     )

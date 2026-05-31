@@ -1,4 +1,5 @@
 from db.models.admin_audit_log import AdminAuditLog
+from db.models.auth_session import AuthSession
 from db.models.banner import Banner
 from db.models.brand import Brand
 from db.models.business import Business
